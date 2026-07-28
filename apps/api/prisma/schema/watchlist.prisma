@@ -1,0 +1,38 @@
+// ===========================================================================
+// Watchlists.
+// ===========================================================================
+
+/// A named, ordered collection of instruments a user tracks.
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  color     String?
+  isDefault Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items WatchlistItem[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("watchlists")
+}
+
+/// An instrument inside a watchlist.
+model WatchlistItem {
+  id           String     @id @default(cuid())
+  watchlistId  String
+  watchlist    Watchlist  @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  instrumentId String
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  note         String?
+  sortOrder    Int        @default(0)
+  addedAt      DateTime   @default(now())
+
+  @@unique([watchlistId, instrumentId])
+  @@index([instrumentId])
+  @@map("watchlist_items")
+}

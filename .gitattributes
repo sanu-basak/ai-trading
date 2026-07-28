@@ -1,0 +1,15 @@
+# Normalize line endings to LF for all text files across platforms.
+* text=auto eol=lf
+
+# Explicit binaries (never normalized)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+
+# Lockfiles / generated — keep as-is, mark as generated in diffs
+pnpm-lock.yaml -diff linguist-generated

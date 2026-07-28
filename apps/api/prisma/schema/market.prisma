@@ -1,0 +1,147 @@
+// ===========================================================================
+// Market reference data — exchanges, instruments, derivatives, candles.
+// NOTE: high-frequency tick data is NOT stored here; only reference metadata,
+// historical candles for backtests, and periodic option-chain snapshots.
+// ===========================================================================
+
+/// A trading venue (NSE, BSE, NASDAQ, BINANCE, …).
+model Exchange {
+  id        String   @id @default(cuid())
+  code      String   @unique // "NSE", "BSE", "NASDAQ"
+  name      String
+  country   String?  @db.VarChar(2)
+  timezone  String   @default("Asia/Kolkata")
+  currency  String   @default("INR") @db.VarChar(3)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  instruments Instrument[]
+
+  @@map("exchanges")
+}
+
+/// A tradable instrument. The canonical reference across the platform.
+model Instrument {
+  id         String     @id @default(cuid())
+  exchangeId String
+  exchange   Exchange   @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  symbol     String // e.g. "RELIANCE", "BTCUSDT"
+  name       String
+  assetClass AssetClass
+  isin       String?
+  currency   String     @default("INR") @db.VarChar(3)
+  sector     String?
+  industry   String?
+  lotSize    Int        @default(1)
+  tickSize   Decimal    @default(0.05) @db.Decimal(20, 8)
+  isTradable Boolean    @default(true)
+  isActive   Boolean    @default(true)
+  metadata   Json? // provider ids, figi, etc.
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  // Derivative specializations (when this instrument IS a derivative)
+  optionContract OptionContract? @relation("OptionContractInstrument")
+  futureContract FutureContract? @relation("FutureContractInstrument")
+
+  // Derivatives that reference this instrument as their UNDERLYING
+  optionsOnThis OptionContract[]      @relation("OptionUnderlying")
+  futuresOnThis FutureContract[]      @relation("FutureUnderlying")
+  optionChains  OptionChainSnapshot[]
+
+  // Cross-context references
+  candles          Candle[]
+  watchlistItems   WatchlistItem[]
+  holdings         Holding[]
+  portfolioTxns    PortfolioTransaction[]
+  journalTrades    JournalTrade[]
+  paperOrders      PaperOrder[]
+  paperPositions   PaperPosition[]
+  paperTrades      PaperTrade[]
+  backtestTrades   BacktestTrade[]
+  analysisRequests AnalysisRequest[]
+  signals          Signal[]
+  scanResults      ScanResult[]
+  alerts           Alert[]
+  newsLinks        NewsArticleInstrument[]
+
+  @@unique([exchangeId, symbol])
+  @@index([assetClass])
+  @@index([symbol])
+  @@index([sector])
+  @@map("instruments")
+}
+
+/// Option-contract metadata for an instrument of assetClass = OPTION.
+model OptionContract {
+  id           String     @id @default(cuid())
+  instrumentId String     @unique
+  instrument   Instrument @relation("OptionContractInstrument", fields: [instrumentId], references: [id], onDelete: Cascade)
+  underlyingId String
+  underlying   Instrument @relation("OptionUnderlying", fields: [underlyingId], references: [id], onDelete: Cascade)
+  optionType   OptionType
+  strike       Decimal    @db.Decimal(20, 8)
+  expiry       DateTime
+  lotSize      Int        @default(1)
+
+  @@unique([underlyingId, expiry, strike, optionType])
+  @@index([underlyingId, expiry])
+  @@map("option_contracts")
+}
+
+/// Future-contract metadata for an instrument of assetClass = FUTURE.
+model FutureContract {
+  id           String     @id @default(cuid())
+  instrumentId String     @unique
+  instrument   Instrument @relation("FutureContractInstrument", fields: [instrumentId], references: [id], onDelete: Cascade)
+  underlyingId String
+  underlying   Instrument @relation("FutureUnderlying", fields: [underlyingId], references: [id], onDelete: Cascade)
+  expiry       DateTime
+  lotSize      Int        @default(1)
+
+  @@unique([underlyingId, expiry])
+  @@index([underlyingId, expiry])
+  @@map("future_contracts")
+}
+
+/// Historical OHLCV candle (persisted for backtesting & analysis caching).
+model Candle {
+  id           String     @id @default(cuid())
+  instrumentId String
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  timeframe    Timeframe
+  openTime     DateTime
+  open         Decimal    @db.Decimal(20, 8)
+  high         Decimal    @db.Decimal(20, 8)
+  low          Decimal    @db.Decimal(20, 8)
+  close        Decimal    @db.Decimal(20, 8)
+  volume       Decimal    @db.Decimal(30, 8)
+  openInterest Decimal?   @db.Decimal(30, 8)
+  source       String? // originating provider
+  createdAt    DateTime   @default(now())
+
+  @@unique([instrumentId, timeframe, openTime])
+  @@index([instrumentId, timeframe, openTime])
+  @@map("candles")
+}
+
+/// Periodic snapshot of an underlying's option chain analytics.
+model OptionChainSnapshot {
+  id           String     @id @default(cuid())
+  underlyingId String
+  underlying   Instrument @relation(fields: [underlyingId], references: [id], onDelete: Cascade)
+  expiry       DateTime
+  capturedAt   DateTime   @default(now())
+  spotPrice    Decimal    @db.Decimal(20, 8)
+  pcr          Decimal?   @db.Decimal(12, 4) // put-call ratio
+  maxPain      Decimal?   @db.Decimal(20, 8)
+  totalCallOi  Decimal?   @db.Decimal(30, 0)
+  totalPutOi   Decimal?   @db.Decimal(30, 0)
+  ivPercentile Decimal?   @db.Decimal(8, 4)
+  ivRank       Decimal?   @db.Decimal(8, 4)
+  chain        Json // strikes[]: { strike, ce:{oi,iv,volume,...}, pe:{...} }
+
+  @@index([underlyingId, expiry, capturedAt])
+  @@map("option_chain_snapshots")
+}

@@ -1,0 +1,44 @@
+// ===========================================================================
+// Strategy Builder — reusable, versioned trading strategies.
+// ===========================================================================
+
+/// A user-defined (or AI/hybrid) trading strategy.
+model Strategy {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String             @unique @default(cuid())
+  description String?
+  type        StrategyType       @default(RULE_BASED)
+  status      StrategyStatus     @default(DRAFT)
+  visibility  StrategyVisibility @default(PRIVATE)
+  /// Declarative rule graph: entry/exit conditions, indicators, risk params.
+  definition  Json               @default("{}")
+  tags        String[]
+  version     Int                @default(1)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  versions      StrategyVersion[]
+  backtestRuns  BacktestRun[]
+  journalTrades JournalTrade[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("strategies")
+}
+
+/// An immutable historical version of a strategy definition.
+model StrategyVersion {
+  id         String   @id @default(cuid())
+  strategyId String
+  strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  version    Int
+  definition Json
+  changelog  String?
+  createdAt  DateTime @default(now())
+
+  @@unique([strategyId, version])
+  @@map("strategy_versions")
+}

@@ -1,0 +1,248 @@
+// ===========================================================================
+// Identity & Access Control — users, RBAC, sessions, credentials, API keys.
+// ===========================================================================
+
+/// A platform user. Root aggregate for all user-owned data.
+model User {
+  id              String     @id @default(cuid())
+  email           String     @unique
+  emailVerified   Boolean    @default(false)
+  emailVerifiedAt DateTime?
+  passwordHash    String? // null for pure-OAuth accounts
+  firstName       String?
+  lastName        String?
+  displayName     String?
+  avatarUrl       String?
+  phone           String?
+  phoneVerified   Boolean    @default(false)
+  country         String?    @db.VarChar(2)
+  timezone        String     @default("Asia/Kolkata")
+  locale          String     @default("en")
+  status          UserStatus @default(PENDING)
+
+  // Security
+  twoFactorEnabled Boolean   @default(false)
+  twoFactorSecret  String? // encrypted at rest (app-layer)
+  lastLoginAt      DateTime?
+  lastLoginIp      String?
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+
+  // Growth / referral
+  referralCode String  @unique @default(cuid())
+  referredById String?
+  referredBy   User?   @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals    User[]  @relation("UserReferrals")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // --- Relations ---
+  roles                UserRole[]
+  sessions             Session[]
+  oauthAccounts        OAuthAccount[]
+  verificationTokens   VerificationToken[]
+  backupCodes          TwoFactorBackupCode[]
+  apiKeys              ApiKey[]
+  preferences          UserPreferences?
+  auditLogs            AuditLog[]
+  securityEvents       SecurityEvent[]
+  loginAttempts        LoginAttempt[]
+  watchlists           Watchlist[]
+  portfolios           Portfolio[]
+  journalTrades        JournalTrade[]
+  journalTags          JournalTag[]
+  paperAccounts        PaperAccount[]
+  backtestRuns         BacktestRun[]
+  strategies           Strategy[]
+  analysisRequests     AnalysisRequest[]
+  signals              Signal[]
+  visionAnalyses       VisionAnalysis[]
+  conversations        Conversation[]
+  aiUsage              AiUsageRecord[]
+  scannerPresets       ScannerPreset[]
+  scanRuns             ScanRun[]
+  riskProfile          RiskProfile?
+  alerts               Alert[]
+  notifications        Notification[]
+  notificationChannels NotificationChannel[]
+  pushSubscriptions    PushSubscription[]
+  subscriptions        Subscription[]
+  invoices             Invoice[]
+  payments             Payment[]
+  couponRedemptions    CouponRedemption[]
+  referralsMade        Referral[]            @relation("ReferralReferrer")
+  referralReceived     Referral?             @relation("ReferralReferee")
+  affiliate            Affiliate?
+  brokerConnections    BrokerConnection[]
+  featureUsage         FeatureUsage[]
+  systemSettingsEdited SystemSetting[]       @relation("SystemSettingEditor")
+
+  @@index([status])
+  @@index([referredById])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+/// A role in the RBAC model (e.g. SUPER_ADMIN, ADMIN, ANALYST, USER). Seeded.
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false) // system roles cannot be deleted
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+/// A granular permission (e.g. "user:read", "billing:manage", "signal:create").
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  description String?
+  resource    String // e.g. "user"
+  action      String // e.g. "read"
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+
+  @@index([resource])
+  @@map("permissions")
+}
+
+/// Role ⇄ Permission join.
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  assignedAt   DateTime   @default(now())
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+/// User ⇄ Role join.
+model UserRole {
+  userId     String
+  roleId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+/// A refresh-token-backed authentication session.
+model Session {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String    @unique
+  userAgent        String?
+  ip               String?
+  deviceLabel      String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  lastUsedAt       DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+/// Linked OAuth/social identity.
+model OAuthAccount {
+  id                String       @id @default(cuid())
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          AuthProvider
+  providerAccountId String
+  accessToken       String? // encrypted
+  refreshToken      String? // encrypted
+  expiresAt         DateTime?
+  scope             String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("oauth_accounts")
+}
+
+/// Single-use tokens for email verification, password reset, etc.
+model VerificationToken {
+  id        String                @id @default(cuid())
+  userId    String
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      VerificationTokenType
+  tokenHash String                @unique
+  payload   Json? // e.g. new email for EMAIL_CHANGE
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime              @default(now())
+
+  @@index([userId, type])
+  @@map("verification_tokens")
+}
+
+/// One-time 2FA recovery codes.
+model TwoFactorBackupCode {
+  id       String    @id @default(cuid())
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash String    @unique
+  usedAt   DateTime?
+
+  @@index([userId])
+  @@map("two_factor_backup_codes")
+}
+
+/// Programmatic-access API key (hashed; prefix stored for display).
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  keyPrefix  String    @unique // shown to the user, e.g. "dqk_live_abcd"
+  keyHash    String    @unique
+  scopes     String[]
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  usageLogs ApiUsageLog[]
+
+  @@index([userId])
+  @@map("api_keys")
+}
+
+/// Per-user UI/behaviour preferences.
+model UserPreferences {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme               String    @default("system") // "light" | "dark" | "system"
+  baseCurrency        String    @default("INR") @db.VarChar(3)
+  defaultMarket       String    @default("NSE")
+  defaultTimeframe    Timeframe @default(D1)
+  chartType           String    @default("candles")
+  emailNotifications  Boolean   @default(true)
+  pushNotifications   Boolean   @default(true)
+  marketingOptIn      Boolean   @default(false)
+  riskDisclaimerAckAt DateTime?
+  settings            Json      @default("{}")
+  updatedAt           DateTime  @updatedAt
+
+  @@map("user_preferences")
+}

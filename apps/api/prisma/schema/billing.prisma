@@ -1,0 +1,271 @@
+// ===========================================================================
+// Subscription & Billing — plans, subscriptions, invoices, payments,
+// coupons, referrals, affiliates, metering & payment webhooks (Razorpay).
+// ===========================================================================
+
+/// A subscription plan (Free / Basic / Pro / Premium / Enterprise).
+model Plan {
+  id                    String   @id @default(cuid())
+  tier                  PlanTier
+  name                  String
+  slug                  String   @unique
+  description           String?
+  priceMonthly          Decimal  @default(0) @db.Decimal(12, 2)
+  priceYearly           Decimal  @default(0) @db.Decimal(12, 2)
+  currency              String   @default("INR") @db.VarChar(3)
+  /// Marketing feature bullet list.
+  features              Json     @default("[]")
+  /// Enforced quotas: { aiSignalsPerDay, scanners, watchlists, backtests, ... }.
+  limits                Json     @default("{}")
+  trialDays             Int      @default(0)
+  isActive              Boolean  @default(true)
+  isPublic              Boolean  @default(true)
+  sortOrder             Int      @default(0)
+  razorpayPlanIdMonthly String?
+  razorpayPlanIdYearly  String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([tier])
+  @@map("plans")
+}
+
+/// A user's subscription to a plan.
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId                 String
+  plan                   Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  status                 SubscriptionStatus @default(TRIALING)
+  billingCycle           BillingCycle       @default(MONTHLY)
+  provider               PaymentProvider    @default(RAZORPAY)
+  currentPeriodStart     DateTime           @default(now())
+  currentPeriodEnd       DateTime
+  trialEndsAt            DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  canceledAt             DateTime?
+  endedAt                DateTime?
+  razorpaySubscriptionId String?            @unique
+  razorpayCustomerId     String?
+  couponId               String?
+  coupon                 Coupon?            @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  metadata               Json?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  invoices          Invoice[]
+  couponRedemptions CouponRedemption[]
+  referral          Referral?
+
+  @@index([userId, status])
+  @@index([planId])
+  @@map("subscriptions")
+}
+
+/// A billing invoice (with GST breakdown).
+model Invoice {
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId    String?
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  number            String        @unique
+  status            InvoiceStatus @default(PENDING)
+  currency          String        @default("INR") @db.VarChar(3)
+  subtotal          Decimal       @db.Decimal(12, 2)
+  discount          Decimal       @default(0) @db.Decimal(12, 2)
+  taxAmount         Decimal       @default(0) @db.Decimal(12, 2) // GST
+  taxRatePct        Decimal       @default(18) @db.Decimal(6, 3)
+  total             Decimal       @db.Decimal(12, 2)
+  /// GSTIN, HSN/SAC, CGST/SGST/IGST split, billing address.
+  taxDetails        Json?
+  lineItems         Json          @default("[]")
+  dueDate           DateTime?
+  paidAt            DateTime?
+  razorpayInvoiceId String?       @unique
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  payments Payment[]
+
+  @@index([userId, status])
+  @@index([subscriptionId])
+  @@map("invoices")
+}
+
+/// A payment attempt against an invoice.
+model Payment {
+  id                String          @id @default(cuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoiceId         String?
+  invoice           Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  provider          PaymentProvider @default(RAZORPAY)
+  method            PaymentMethod?
+  status            PaymentStatus   @default(CREATED)
+  amount            Decimal         @db.Decimal(12, 2)
+  currency          String          @default("INR") @db.VarChar(3)
+  amountRefunded    Decimal         @default(0) @db.Decimal(12, 2)
+  razorpayOrderId   String?
+  razorpayPaymentId String?         @unique
+  razorpaySignature String?
+  failureReason     String?
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([userId, status])
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+/// A discount coupon.
+model Coupon {
+  id             String         @id @default(cuid())
+  code           String         @unique
+  description    String?
+  type           CouponType
+  value          Decimal        @db.Decimal(12, 2) // percent or fixed amount
+  currency       String?        @db.VarChar(3)
+  duration       CouponDuration @default(ONCE)
+  durationMonths Int?
+  maxRedemptions Int?
+  redeemedCount  Int            @default(0)
+  perUserLimit   Int            @default(1)
+  appliesToTiers PlanTier[]
+  validFrom      DateTime?
+  validUntil     DateTime?
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+
+  redemptions   CouponRedemption[]
+  subscriptions Subscription[]
+
+  @@index([isActive])
+  @@map("coupons")
+}
+
+/// A record of a coupon being redeemed by a user.
+model CouponRedemption {
+  id             String        @id @default(cuid())
+  couponId       String
+  coupon         Coupon        @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  amountApplied  Decimal       @db.Decimal(12, 2)
+  redeemedAt     DateTime      @default(now())
+
+  @@unique([couponId, userId])
+  @@index([userId])
+  @@map("coupon_redemptions")
+}
+
+/// A referral link between a referrer and a referred (referee) user.
+model Referral {
+  id             String         @id @default(cuid())
+  referrerId     String
+  referrer       User           @relation("ReferralReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  refereeId      String         @unique
+  referee        User           @relation("ReferralReferee", fields: [refereeId], references: [id], onDelete: Cascade)
+  subscriptionId String?        @unique
+  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  status         ReferralStatus @default(PENDING)
+  rewardAmount   Decimal        @default(0) @db.Decimal(12, 2)
+  currency       String         @default("INR") @db.VarChar(3)
+  qualifiedAt    DateTime?
+  rewardedAt     DateTime?
+  createdAt      DateTime       @default(now())
+
+  @@index([referrerId, status])
+  @@map("referrals")
+}
+
+/// An affiliate partner account.
+model Affiliate {
+  id            String          @id @default(cuid())
+  userId        String          @unique
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code          String          @unique
+  status        AffiliateStatus @default(PENDING)
+  commissionPct Decimal         @default(20) @db.Decimal(6, 3)
+  balance       Decimal         @default(0) @db.Decimal(14, 2)
+  totalEarned   Decimal         @default(0) @db.Decimal(14, 2)
+  payoutDetails Json? // bank/UPI details (encrypted at app layer)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  commissions AffiliateCommission[]
+  payouts     AffiliatePayout[]
+
+  @@map("affiliates")
+}
+
+/// A commission earned by an affiliate on a payment.
+model AffiliateCommission {
+  id          String       @id @default(cuid())
+  affiliateId String
+  affiliate   Affiliate    @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  paymentId   String?
+  amount      Decimal      @db.Decimal(14, 2)
+  currency    String       @default("INR") @db.VarChar(3)
+  status      PayoutStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+
+  @@index([affiliateId, status])
+  @@map("affiliate_commissions")
+}
+
+/// A payout to an affiliate.
+model AffiliatePayout {
+  id          String       @id @default(cuid())
+  affiliateId String
+  affiliate   Affiliate    @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  amount      Decimal      @db.Decimal(14, 2)
+  currency    String       @default("INR") @db.VarChar(3)
+  status      PayoutStatus @default(PENDING)
+  reference   String?
+  processedAt DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@index([affiliateId, status])
+  @@map("affiliate_payouts")
+}
+
+/// Per-user metered feature usage against plan limits.
+model FeatureUsage {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feature     String // e.g. "ai_signal", "backtest", "scan", "vision"
+  periodStart DateTime
+  periodEnd   DateTime
+  used        Int      @default(0)
+  limit       Int? // snapshot of the plan limit for this period (null = unlimited)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, feature, periodStart])
+  @@index([userId, feature])
+  @@map("feature_usage")
+}
+
+/// Idempotent record of an inbound payment-provider webhook.
+model WebhookEvent {
+  id          String          @id @default(cuid())
+  provider    PaymentProvider
+  eventId     String
+  eventType   String
+  status      WebhookStatus   @default(RECEIVED)
+  payload     Json
+  error       String?
+  processedAt DateTime?
+  createdAt   DateTime        @default(now())
+
+  @@unique([provider, eventId])
+  @@index([eventType])
+  @@map("webhook_events")
+}

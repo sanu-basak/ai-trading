@@ -1,0 +1,79 @@
+// ===========================================================================
+// Security & audit — tamper-evident trails, auth telemetry, API usage.
+// ===========================================================================
+
+/// Append-only audit trail of privileged / state-changing actions.
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String // e.g. "user.login", "subscription.cancel"
+  entityType String? // e.g. "Subscription"
+  entityId   String?
+  ip         String?
+  userAgent  String?
+  status     String   @default("success") // "success" | "failure"
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Security-relevant events (password change, 2FA toggle, new device, etc.).
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // e.g. "password.changed", "2fa.enabled", "new_device"
+  severity  String   @default("info") // info | warning | critical
+  ip        String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@map("security_events")
+}
+
+/// Login attempt telemetry for rate-limiting & anomaly detection.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email     String
+  success   Boolean
+  ip        String?
+  userAgent String?
+  reason    String? // e.g. "invalid_password", "locked", "ok"
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([ip])
+  @@index([createdAt])
+  @@map("login_attempts")
+}
+
+/// Per-request usage of programmatic API keys (for rate-limits & billing).
+model ApiUsageLog {
+  id            String   @id @default(cuid())
+  apiKeyId      String
+  apiKey        ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  method        String
+  endpoint      String
+  statusCode    Int
+  latencyMs     Int
+  requestBytes  Int?
+  responseBytes Int?
+  ip            String?
+  createdAt     DateTime @default(now())
+
+  @@index([apiKeyId])
+  @@index([endpoint])
+  @@index([createdAt])
+  @@map("api_usage_logs")
+}

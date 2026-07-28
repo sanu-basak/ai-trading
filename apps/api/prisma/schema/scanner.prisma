@@ -1,0 +1,65 @@
+// ===========================================================================
+// Scanners — market / options / news / smart-money screening.
+// ===========================================================================
+
+/// A saved, reusable scanner configuration.
+model ScannerPreset {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  type        ScanType
+  description String?
+  /// Filter criteria graph (indicators, thresholds, universe, logic).
+  filters     Json     @default("{}")
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  runs ScanRun[]
+
+  @@unique([userId, name])
+  @@index([userId, type])
+  @@map("scanner_presets")
+}
+
+/// A single execution of a scanner.
+model ScanRun {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  presetId    String?
+  preset      ScannerPreset? @relation(fields: [presetId], references: [id], onDelete: SetNull)
+  type        ScanType
+  status      ScanStatus     @default(QUEUED)
+  params      Json           @default("{}")
+  resultCount Int            @default(0)
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+
+  results ScanResult[]
+
+  @@index([userId, createdAt])
+  @@index([presetId])
+  @@map("scan_runs")
+}
+
+/// A single hit produced by a scan run.
+model ScanResult {
+  id           String     @id @default(cuid())
+  scanRunId    String
+  scanRun      ScanRun    @relation(fields: [scanRunId], references: [id], onDelete: Cascade)
+  instrumentId String
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  score        Decimal?   @db.Decimal(8, 4)
+  /// Which criteria matched + snapshot values at scan time.
+  matched      Json       @default("{}")
+  snapshot     Json       @default("{}")
+  createdAt    DateTime   @default(now())
+
+  @@index([scanRunId, score])
+  @@index([instrumentId])
+  @@map("scan_results")
+}

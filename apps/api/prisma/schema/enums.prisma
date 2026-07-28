@@ -1,0 +1,444 @@
+// ===========================================================================
+// Enums — shared vocabulary across all bounded contexts.
+// Kept centralized so the same PostgreSQL native enum type is reused.
+// ===========================================================================
+
+// ---------- Identity & access ----------
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  GITHUB
+  APPLE
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  EMAIL_CHANGE
+  MAGIC_LINK
+}
+
+// ---------- Markets & instruments ----------
+
+enum AssetClass {
+  EQUITY
+  INDEX
+  ETF
+  CRYPTO
+  FOREX
+  COMMODITY
+  OPTION
+  FUTURE
+  BOND
+}
+
+enum OptionType {
+  CALL
+  PUT
+}
+
+enum Timeframe {
+  M1
+  M3
+  M5
+  M15
+  M30
+  H1
+  H4
+  D1
+  W1
+  MN1
+}
+
+// ---------- AI analysis ----------
+
+enum SignalType {
+  BUY
+  SELL
+  NO_TRADE
+  WATCH
+}
+
+enum AnalysisType {
+  TECHNICAL
+  SMART_MONEY
+  PRICE_ACTION
+  OPTIONS
+  MULTI_TIMEFRAME
+  FUNDAMENTAL
+  FULL
+  VISION
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+enum MarketRegime {
+  TRENDING_UP
+  TRENDING_DOWN
+  RANGING
+  VOLATILE
+  CHOPPY
+  BREAKOUT
+  ACCUMULATION
+  DISTRIBUTION
+}
+
+enum TrendDirection {
+  UP
+  DOWN
+  SIDEWAYS
+}
+
+enum PatternCategory {
+  CANDLESTICK
+  CHART
+  HARMONIC
+  SMART_MONEY
+  PRICE_ACTION
+}
+
+// ---------- News ----------
+
+enum SentimentLabel {
+  VERY_NEGATIVE
+  NEGATIVE
+  NEUTRAL
+  POSITIVE
+  VERY_POSITIVE
+}
+
+enum NewsImpact {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ---------- Orders / positions / trades ----------
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
+enum PositionSide {
+  LONG
+  SHORT
+}
+
+enum OrderType {
+  MARKET
+  LIMIT
+  STOP
+  STOP_LIMIT
+  TRAILING_STOP
+}
+
+enum OrderStatus {
+  PENDING
+  OPEN
+  PARTIALLY_FILLED
+  FILLED
+  CANCELED
+  REJECTED
+  EXPIRED
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
+  CANCELED
+}
+
+enum PositionStatus {
+  OPEN
+  CLOSED
+}
+
+enum LedgerTransactionType {
+  BUY
+  SELL
+  DIVIDEND
+  DEPOSIT
+  WITHDRAWAL
+  FEE
+  INTEREST
+  SPLIT
+  BONUS
+  ADJUSTMENT
+}
+
+// ---------- Backtesting & strategies ----------
+
+enum BacktestStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum StrategyType {
+  RULE_BASED
+  AI
+  HYBRID
+  MANUAL
+}
+
+enum StrategyStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum StrategyVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+// ---------- Scanners ----------
+
+enum ScanType {
+  MARKET
+  OPTIONS
+  NEWS
+  SMART_MONEY
+  TECHNICAL
+  CUSTOM
+}
+
+enum ScanStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// ---------- Alerts & notifications ----------
+
+enum AlertType {
+  PRICE
+  INDICATOR
+  SIGNAL
+  PATTERN
+  NEWS
+  VOLUME
+  SMART_MONEY
+  RISK
+}
+
+enum AlertStatus {
+  ACTIVE
+  PAUSED
+  TRIGGERED
+  EXPIRED
+  DISABLED
+}
+
+enum NotificationChannelType {
+  EMAIL
+  TELEGRAM
+  WHATSAPP
+  PUSH
+  DESKTOP
+  SMS
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  READ
+}
+
+enum NotificationCategory {
+  ALERT
+  SIGNAL
+  BILLING
+  SYSTEM
+  SECURITY
+  ACCOUNT
+  MARKETING
+}
+
+// ---------- Subscription & billing ----------
+
+enum PlanTier {
+  FREE
+  BASIC
+  PRO
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+  PAUSED
+  INCOMPLETE
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  LIFETIME
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  VOID
+}
+
+enum PaymentStatus {
+  CREATED
+  AUTHORIZED
+  CAPTURED
+  PENDING
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentProvider {
+  RAZORPAY
+  STRIPE
+  MANUAL
+}
+
+enum PaymentMethod {
+  CARD
+  UPI
+  NETBANKING
+  WALLET
+  EMI
+  BANK_TRANSFER
+}
+
+enum CouponType {
+  PERCENT
+  FIXED
+}
+
+enum CouponDuration {
+  ONCE
+  REPEATING
+  FOREVER
+}
+
+enum ReferralStatus {
+  PENDING
+  QUALIFIED
+  REWARDED
+  EXPIRED
+}
+
+enum AffiliateStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+}
+
+// ---------- Broker integration ----------
+
+enum BrokerType {
+  ZERODHA
+  UPSTOX
+  ANGEL_ONE
+  FYERS
+  DHAN
+  ALPACA
+  INTERACTIVE_BROKERS
+  BINANCE
+  OANDA
+}
+
+enum BrokerConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  EXPIRED
+  ERROR
+  PENDING
+}
+
+// ---------- AI chat & usage ----------
+
+enum AiRole {
+  SYSTEM
+  USER
+  ASSISTANT
+  TOOL
+}
+
+enum AiFeature {
+  CHAT
+  ANALYSIS
+  VISION
+  NEWS_SENTIMENT
+  STRATEGY
+  SCANNER
+  SUMMARY
+}
+
+enum LlmProvider {
+  ANTHROPIC
+  OPENAI
+}
+
+// ---------- System / ops ----------
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+  IGNORED
+}
+
+enum JobStatus {
+  QUEUED
+  ACTIVE
+  COMPLETED
+  FAILED
+  DELAYED
+  CANCELED
+}
+
+enum ProviderHealth {
+  HEALTHY
+  DEGRADED
+  DOWN
+  UNKNOWN
+}

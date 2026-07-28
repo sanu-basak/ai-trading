@@ -1,0 +1,96 @@
+// ===========================================================================
+// Trade Journal — discretionary trade logging, review & analytics.
+// ===========================================================================
+
+/// A journaled trade (may be open or closed) with review metadata.
+model JournalTrade {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrumentId String
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  strategyId   String?
+  strategy     Strategy?  @relation(fields: [strategyId], references: [id], onDelete: SetNull)
+
+  side       PositionSide
+  status     TradeStatus  @default(OPEN)
+  quantity   Decimal      @db.Decimal(30, 8)
+  entryPrice Decimal      @db.Decimal(20, 8)
+  exitPrice  Decimal?     @db.Decimal(20, 8)
+  stopLoss   Decimal?     @db.Decimal(20, 8)
+  target     Decimal?     @db.Decimal(20, 8)
+  entryAt    DateTime
+  exitAt     DateTime?
+
+  fees      Decimal  @default(0) @db.Decimal(20, 4)
+  pnl       Decimal? @db.Decimal(20, 4)
+  pnlPct    Decimal? @db.Decimal(12, 4)
+  rMultiple Decimal? @db.Decimal(12, 4)
+
+  // Review / psychology
+  setup           String?
+  timeframe       Timeframe?
+  confidence      Int? // self-rated 1-10
+  emotionBefore   String?
+  emotionAfter    String?
+  mistakes        String?
+  lessons         String?
+  notes           String?
+  ratingExecution Int? // 1-5
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tags        JournalTradeTag[]
+  attachments TradeAttachment[]
+
+  @@index([userId, status])
+  @@index([instrumentId])
+  @@index([strategyId])
+  @@index([entryAt])
+  @@map("journal_trades")
+}
+
+/// A user-defined tag for journal trades.
+model JournalTag {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  color     String?
+  createdAt DateTime @default(now())
+
+  trades JournalTradeTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("journal_tags")
+}
+
+/// JournalTrade ⇄ JournalTag join.
+model JournalTradeTag {
+  tradeId String
+  tagId   String
+  trade   JournalTrade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  tag     JournalTag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([tradeId, tagId])
+  @@index([tagId])
+  @@map("journal_trade_tags")
+}
+
+/// A screenshot / file attached to a journaled trade.
+model TradeAttachment {
+  id        String       @id @default(cuid())
+  tradeId   String
+  trade     JournalTrade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  url       String
+  fileName  String?
+  mimeType  String?
+  sizeBytes Int?
+  caption   String?
+  createdAt DateTime     @default(now())
+
+  @@index([tradeId])
+  @@map("trade_attachments")
+}

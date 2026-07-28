@@ -1,0 +1,74 @@
+// ===========================================================================
+// System / Ops — settings, feature flags, provider config, job runs.
+// ===========================================================================
+
+/// A global system setting (admin-editable key/value).
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  category    String   @default("general")
+  description String?
+  isSecret    Boolean  @default(false)
+  updatedById String?
+  updatedBy   User?    @relation("SystemSettingEditor", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+  @@map("system_settings")
+}
+
+/// A feature flag for gradual rollout / kill-switching.
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  description String?
+  isEnabled   Boolean  @default(false)
+  rolloutPct  Int      @default(0) // 0-100
+  /// Optional targeting rules (tiers, user ids, cohorts).
+  rules       Json?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@map("feature_flags")
+}
+
+/// Configuration & health for a market-data provider (failover ordering).
+model MarketDataProviderConfig {
+  id              String         @id @default(cuid())
+  name            String         @unique // "zerodha", "polygon", "binance", ...
+  priority        Int            @default(100) // lower = preferred
+  isEnabled       Boolean        @default(true)
+  assetClasses    AssetClass[]
+  rateLimitPerMin Int            @default(60)
+  health          ProviderHealth @default(UNKNOWN)
+  lastCheckedAt   DateTime?
+  /// Non-secret config (base urls, feature support). Secrets live in env/vault.
+  config          Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([priority])
+  @@map("market_data_provider_configs")
+}
+
+/// A record of a background job execution (BullMQ mirror for observability).
+model JobRun {
+  id         String    @id @default(cuid())
+  queue      String
+  name       String
+  jobId      String?
+  status     JobStatus @default(QUEUED)
+  attempts   Int       @default(0)
+  data       Json?
+  result     Json?
+  error      String?
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([queue, status])
+  @@index([createdAt])
+  @@map("job_runs")
+}

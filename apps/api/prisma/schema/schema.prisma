@@ -1,0 +1,17 @@
+// ===========================================================================
+// DEVQUANTIC AI TRADING ANALYST — Prisma schema (root)
+// ---------------------------------------------------------------------------
+// Multi-file schema (Prisma "schema folder", GA since Prisma 6.7).
+// The datasource + generator live here; models are grouped by bounded context
+// across the sibling *.prisma files in this directory.
+// ===========================================================================
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

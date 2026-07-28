@@ -1,0 +1,13 @@
+[project]
+name = "devquantic-ai-engine"
+version = "0.1.0"
+description = "DEVQUANTIC AI Engine — technical analysis & explainable signal generation"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

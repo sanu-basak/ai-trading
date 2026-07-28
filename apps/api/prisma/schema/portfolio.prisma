@@ -1,0 +1,63 @@
+// ===========================================================================
+// Portfolio — real holdings & transaction ledger (analysis only; no execution).
+// ===========================================================================
+
+/// A user portfolio (a book of holdings in a base currency).
+model Portfolio {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  baseCurrency String   @default("INR") @db.VarChar(3)
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  holdings     Holding[]
+  transactions PortfolioTransaction[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("portfolios")
+}
+
+/// A current position (aggregate of transactions) within a portfolio.
+model Holding {
+  id           String     @id @default(cuid())
+  portfolioId  String
+  portfolio    Portfolio  @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  instrumentId String
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  quantity     Decimal    @db.Decimal(30, 8)
+  avgCost      Decimal    @db.Decimal(20, 8)
+  realizedPnl  Decimal    @default(0) @db.Decimal(20, 4)
+  openedAt     DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([portfolioId, instrumentId])
+  @@index([instrumentId])
+  @@map("holdings")
+}
+
+/// An immutable ledger entry that mutates a portfolio's holdings.
+model PortfolioTransaction {
+  id           String                @id @default(cuid())
+  portfolioId  String
+  portfolio    Portfolio             @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  instrumentId String?
+  instrument   Instrument?           @relation(fields: [instrumentId], references: [id], onDelete: SetNull)
+  type         LedgerTransactionType
+  quantity     Decimal?              @db.Decimal(30, 8)
+  price        Decimal?              @db.Decimal(20, 8)
+  amount       Decimal               @db.Decimal(20, 4) // signed cash impact
+  fees         Decimal               @default(0) @db.Decimal(20, 4)
+  taxes        Decimal               @default(0) @db.Decimal(20, 4)
+  currency     String                @default("INR") @db.VarChar(3)
+  note         String?
+  executedAt   DateTime
+  createdAt    DateTime              @default(now())
+
+  @@index([portfolioId, executedAt])
+  @@index([instrumentId])
+  @@map("portfolio_transactions")
+}

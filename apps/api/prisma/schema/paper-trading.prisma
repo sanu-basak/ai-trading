@@ -1,0 +1,117 @@
+// ===========================================================================
+// Paper Trading — simulated accounts, orders, positions, fills & ledger.
+// ===========================================================================
+
+/// A virtual trading account with simulated capital.
+model PaperAccount {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  currency        String   @default("INR") @db.VarChar(3)
+  startingCapital Decimal  @db.Decimal(20, 4)
+  cashBalance     Decimal  @db.Decimal(20, 4)
+  equity          Decimal  @db.Decimal(20, 4)
+  realizedPnl     Decimal  @default(0) @db.Decimal(20, 4)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orders       PaperOrder[]
+  positions    PaperPosition[]
+  trades       PaperTrade[]
+  transactions PaperTransaction[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("paper_accounts")
+}
+
+/// A simulated order.
+model PaperOrder {
+  id           String       @id @default(cuid())
+  accountId    String
+  account      PaperAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  instrumentId String
+  instrument   Instrument   @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  side         OrderSide
+  type         OrderType
+  status       OrderStatus  @default(PENDING)
+  quantity     Decimal      @db.Decimal(30, 8)
+  filledQty    Decimal      @default(0) @db.Decimal(30, 8)
+  limitPrice   Decimal?     @db.Decimal(20, 8)
+  stopPrice    Decimal?     @db.Decimal(20, 8)
+  avgFillPrice Decimal?     @db.Decimal(20, 8)
+  timeInForce  String       @default("GTC")
+  placedAt     DateTime     @default(now())
+  filledAt     DateTime?
+  canceledAt   DateTime?
+  rejectReason String?
+
+  trades PaperTrade[]
+
+  @@index([accountId, status])
+  @@index([instrumentId])
+  @@map("paper_orders")
+}
+
+/// A simulated open/closed position.
+model PaperPosition {
+  id            String         @id @default(cuid())
+  accountId     String
+  account       PaperAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  instrumentId  String
+  instrument    Instrument     @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  side          PositionSide
+  status        PositionStatus @default(OPEN)
+  quantity      Decimal        @db.Decimal(30, 8)
+  avgEntryPrice Decimal        @db.Decimal(20, 8)
+  avgExitPrice  Decimal?       @db.Decimal(20, 8)
+  stopLoss      Decimal?       @db.Decimal(20, 8)
+  takeProfit    Decimal?       @db.Decimal(20, 8)
+  realizedPnl   Decimal        @default(0) @db.Decimal(20, 4)
+  openedAt      DateTime       @default(now())
+  closedAt      DateTime?
+
+  @@unique([accountId, instrumentId])
+  @@index([accountId, status])
+  @@index([instrumentId])
+  @@map("paper_positions")
+}
+
+/// An executed fill against a simulated order.
+model PaperTrade {
+  id           String       @id @default(cuid())
+  accountId    String
+  account      PaperAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  orderId      String
+  order        PaperOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  instrumentId String
+  instrument   Instrument   @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  side         OrderSide
+  quantity     Decimal      @db.Decimal(30, 8)
+  price        Decimal      @db.Decimal(20, 8)
+  fees         Decimal      @default(0) @db.Decimal(20, 4)
+  pnl          Decimal?     @db.Decimal(20, 4)
+  executedAt   DateTime     @default(now())
+
+  @@index([accountId, executedAt])
+  @@index([orderId])
+  @@index([instrumentId])
+  @@map("paper_trades")
+}
+
+/// Cash-ledger entry for a paper account.
+model PaperTransaction {
+  id        String                @id @default(cuid())
+  accountId String
+  account   PaperAccount          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type      LedgerTransactionType
+  amount    Decimal               @db.Decimal(20, 4) // signed
+  balance   Decimal               @db.Decimal(20, 4) // running balance after entry
+  note      String?
+  createdAt DateTime              @default(now())
+
+  @@index([accountId, createdAt])
+  @@map("paper_transactions")
+}

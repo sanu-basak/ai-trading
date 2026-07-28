@@ -1,0 +1,11 @@
+# DEVQUANTIC AI Engine — core runtime (analysis service).
+# Pure-Python numeric stack so the technical-analysis core runs anywhere.
+fastapi>=0.115,<0.116
+uvicorn[standard]>=0.32,<0.35
+pydantic>=2.9,<3
+pydantic-settings>=2.5,<3
+numpy>=2.1
+pandas>=2.2.3
+httpx>=0.27
+orjson>=3.10
+python-json-logger>=2.0

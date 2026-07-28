@@ -1,0 +1,15 @@
+# DEVQUANTIC AI Engine — optional ML / advanced stack.
+# Installed separately (heavier, some need system libs). The technical-analysis
+# core in requirements.txt does NOT depend on these, so the service runs without
+# them; ML-backed forecasting endpoints activate only when these are present.
+-r requirements.txt
+
+scikit-learn>=1.5
+xgboost>=2.1
+lightgbm>=4.5
+prophet>=1.1.6
+# Deep learning (optional — large downloads):
+# torch>=2.4
+# tensorflow>=2.17
+# TA-Lib is intentionally NOT required: all indicators are implemented in-house
+# with NumPy/pandas for portability. Install TA-Lib only if you want its C-speed.

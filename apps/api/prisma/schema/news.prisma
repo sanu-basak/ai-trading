@@ -1,0 +1,62 @@
+// ===========================================================================
+// News — ingestion, sentiment & impact scoring.
+// ===========================================================================
+
+/// A configured news source (Reuters, Bloomberg, Moneycontrol, ET, NSE, BSE…).
+model NewsSource {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  url       String?
+  type      String   @default("rss") // "rss" | "api" | "scrape"
+  isActive  Boolean  @default(true)
+  config    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  articles NewsArticle[]
+
+  @@map("news_sources")
+}
+
+/// An ingested news article with AI sentiment & impact.
+model NewsArticle {
+  id             String          @id @default(cuid())
+  sourceId       String?
+  source         NewsSource?     @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  externalId     String?
+  title          String
+  url            String          @unique
+  author         String?
+  content        String?         @db.Text
+  summary        String?         @db.Text
+  imageUrl       String?
+  publishedAt    DateTime
+  sentiment      SentimentLabel?
+  sentimentScore Decimal?        @db.Decimal(6, 4) // -1..1
+  impact         NewsImpact?
+  impactScore    Decimal?        @db.Decimal(6, 4) // 0..1
+  categories     String[]
+  language       String          @default("en")
+  processedAt    DateTime?
+  createdAt      DateTime        @default(now())
+
+  instruments NewsArticleInstrument[]
+
+  @@index([publishedAt])
+  @@index([sentiment])
+  @@index([impact])
+  @@map("news_articles")
+}
+
+/// NewsArticle ⇄ Instrument relevance join.
+model NewsArticleInstrument {
+  articleId    String
+  instrumentId String
+  article      NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  instrument   Instrument  @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  relevance    Decimal?    @db.Decimal(6, 4) // 0..1
+
+  @@id([articleId, instrumentId])
+  @@index([instrumentId])
+  @@map("news_article_instruments")
+}

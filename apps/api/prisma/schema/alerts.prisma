@@ -1,0 +1,101 @@
+// ===========================================================================
+// Alerts & Notifications — user-defined alerts and multi-channel delivery.
+// ===========================================================================
+
+/// A user-defined alert on price, indicator, signal, pattern, news, etc.
+model Alert {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrumentId String?
+  instrument   Instrument? @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  signalId     String?
+  signal       Signal?     @relation("AlertSignal", fields: [signalId], references: [id], onDelete: SetNull)
+
+  name            String
+  type            AlertType
+  status          AlertStatus               @default(ACTIVE)
+  /// Condition graph (operator, value(s), indicator, timeframe).
+  condition       Json
+  channels        NotificationChannelType[]
+  cooldownSec     Int                       @default(0)
+  isRepeating     Boolean                   @default(false)
+  triggerCount    Int                       @default(0)
+  lastTriggeredAt DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  triggers AlertTrigger[]
+
+  @@index([userId, status])
+  @@index([instrumentId])
+  @@map("alerts")
+}
+
+/// A record of an alert firing.
+model AlertTrigger {
+  id          String   @id @default(cuid())
+  alertId     String
+  alert       Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  triggeredAt DateTime @default(now())
+  /// Snapshot of the market state that satisfied the condition.
+  payload     Json     @default("{}")
+
+  @@index([alertId, triggeredAt])
+  @@map("alert_triggers")
+}
+
+/// A user-facing notification (in-app + optional external channels).
+model Notification {
+  id        String                  @id @default(cuid())
+  userId    String
+  user      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  NotificationCategory
+  channel   NotificationChannelType @default(IN_APP)
+  status    NotificationStatus      @default(PENDING)
+  title     String
+  body      String                  @db.Text
+  data      Json?
+  isRead    Boolean                 @default(false)
+  readAt    DateTime?
+  sentAt    DateTime?
+  createdAt DateTime                @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+/// A configured delivery channel for a user (email/telegram/whatsapp/…).
+model NotificationChannel {
+  id          String                  @id @default(cuid())
+  userId      String
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel     NotificationChannelType
+  destination String // email address, telegram chat id, phone, etc.
+  isVerified  Boolean                 @default(false)
+  isEnabled   Boolean                 @default(true)
+  config      Json?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@unique([userId, channel, destination])
+  @@index([userId])
+  @@map("notification_channels")
+}
+
+/// A Web-Push subscription for browser push notifications.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
