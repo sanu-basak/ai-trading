@@ -109,7 +109,7 @@ pnpm install            # install JS workspaces (added in a later step)
 - [ ] Step 5 — Frontend modules
 - [~] **Step 6 — AI engine** *(core delivered)* — FastAPI service with in-house TA indicators (RSI/MACD/EMA/ATR/ADX/Bollinger/VWAP/SuperTrend/Stochastic) + an **explainable** BUY/SELL/NO_TRADE/WATCH signal engine; 12 pytest tests pass, verified on live Binance candles. Node↔Python bridge wired & verified cross-service. Next: SMC/candlestick/pattern engines, ML forecasting, vision, LLM narrative
 - [ ] Step 7 — Tests
-- [ ] Step 8 — Deployment
+- [~] **Step 8 — Deployment** *(core delivered)* — docker-compose (Postgres, Redis, API, AI-engine, one-shot migrate+seed) with healthchecks + ordering; multi-stage Dockerfiles; GitHub Actions CI (API typecheck/build + AI-engine pytest). Nginx/TLS + web service next
 - [ ] Step 9 — Code review
 
 ---

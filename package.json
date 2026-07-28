@@ -1,0 +1,18 @@
+{
+  "name": "devquantic",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DEVQUANTIC AI Trading Analyst — monorepo root",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "api:dev": "pnpm --filter @devquantic/api dev",
+    "api:build": "pnpm --filter @devquantic/api build",
+    "api:typecheck": "pnpm --filter @devquantic/api typecheck",
+    "api:test": "pnpm --filter @devquantic/api test",
+    "api:migrate": "pnpm --filter @devquantic/api prisma:deploy",
+    "api:seed": "pnpm --filter @devquantic/api db:seed"
+  }
+}
