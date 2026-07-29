@@ -108,7 +108,7 @@ pnpm install            # install JS workspaces (added in a later step)
 - [~] **Step 4 — Backend modules** *(in progress)* — ✅ Auth · Users · RBAC · Instruments · Market-Data (live Binance) · Watchlist · Portfolio (live valuation) · Paper Trading (live-price fill engine w/ long+short) · **AI-Analysis bridge** (Node→Python, persists explainable Signals, WebSocket push — verified cross-service on live data). Initial migration (78 tables) + seed; remaining feature modules next
 - [ ] Step 5 — Frontend modules
 - [~] **Step 6 — AI engine** *(core delivered)* — FastAPI service with in-house TA indicators (RSI/MACD/EMA/ATR/ADX/Bollinger/VWAP/SuperTrend/Stochastic) + an **explainable** BUY/SELL/NO_TRADE/WATCH signal engine; 12 pytest tests pass, verified on live Binance candles. Node↔Python bridge wired & verified cross-service. Next: SMC/candlestick/pattern engines, ML forecasting, vision, LLM narrative
-- [ ] Step 7 — Tests
+- [~] **Step 7 — Tests** *(started)* — API pure-logic unit suite (Vitest, 25 tests: fill/position math, RBAC, value objects, Result, pagination) + AI-engine pytest (12), both wired into CI; no infra required. Integration/e2e (DB-backed) next
 - [~] **Step 8 — Deployment** *(core delivered)* — docker-compose (Postgres, Redis, API, AI-engine, one-shot migrate+seed) with healthchecks + ordering; multi-stage Dockerfiles; GitHub Actions CI (API typecheck/build + AI-engine pytest). Nginx/TLS + web service next
 - [ ] Step 9 — Code review
 

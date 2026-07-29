@@ -48,6 +48,9 @@ jobs:
       - name: Build
         run: pnpm --filter @devquantic/api build
 
+      - name: Unit tests
+        run: pnpm --filter @devquantic/api test
+
   ai-engine:
     name: AI Engine — tests
     runs-on: ubuntu-latest
