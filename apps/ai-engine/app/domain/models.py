@@ -45,6 +45,28 @@ class Target:
 
 
 @dataclass
+class Pattern:
+    """A detected candlestick / chart pattern near the end of the series."""
+
+    name: str
+    category: str  # "CANDLESTICK" | "CHART" | "PRICE_ACTION"
+    direction: str  # "bullish" | "bearish" | "neutral"
+    confidence: float  # 0-100
+    bar_offset: int  # 0 = most recent candle
+    detail: str
+
+
+@dataclass
+class Level:
+    """A support or resistance price level derived from swing pivots."""
+
+    kind: str  # "support" | "resistance"
+    price: float
+    strength: int  # number of pivots forming the level
+    distance_pct: float  # signed distance from current price, %
+
+
+@dataclass
 class AnalysisOutcome:
     signal: SignalType
     confidence: float
@@ -58,4 +80,6 @@ class AnalysisOutcome:
     reasons: list[Factor] = field(default_factory=list)
     rejection: list[str] = field(default_factory=list)
     indicators: dict = field(default_factory=dict)
+    patterns: list[Pattern] = field(default_factory=list)
+    levels: list[Level] = field(default_factory=list)
     summary: str = ""

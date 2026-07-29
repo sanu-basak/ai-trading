@@ -45,6 +45,22 @@ class TargetOut(BaseModel):
     label: str
 
 
+class PatternOut(BaseModel):
+    name: str
+    category: str
+    direction: str
+    confidence: float
+    bar_offset: int
+    detail: str
+
+
+class LevelOut(BaseModel):
+    kind: str
+    price: float
+    strength: int
+    distance_pct: float
+
+
 class AnalyzeResponse(BaseModel):
     symbol: str
     timeframe: str
@@ -60,6 +76,8 @@ class AnalyzeResponse(BaseModel):
     reasons: list[FactorOut]
     rejection: list[str]
     indicators: dict
+    patterns: list[PatternOut]
+    levels: list[LevelOut]
     summary: str
     generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     model_version: str = "ta-signal-1.0"

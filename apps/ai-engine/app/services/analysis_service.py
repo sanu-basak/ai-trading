@@ -3,7 +3,14 @@ from __future__ import annotations
 
 import pandas as pd
 
-from app.api.v1.schemas.analysis import AnalyzeRequest, AnalyzeResponse, FactorOut, TargetOut
+from app.api.v1.schemas.analysis import (
+    AnalyzeRequest,
+    AnalyzeResponse,
+    FactorOut,
+    LevelOut,
+    PatternOut,
+    TargetOut,
+)
 from app.domain.models import AnalysisOutcome
 from app.engines import signal_engine
 
@@ -51,6 +58,21 @@ def _to_response(request: AnalyzeRequest, outcome: AnalysisOutcome) -> AnalyzeRe
         ],
         rejection=outcome.rejection,
         indicators=outcome.indicators,
+        patterns=[
+            PatternOut(
+                name=p.name,
+                category=p.category,
+                direction=p.direction,
+                confidence=p.confidence,
+                bar_offset=p.bar_offset,
+                detail=p.detail,
+            )
+            for p in outcome.patterns
+        ],
+        levels=[
+            LevelOut(kind=lv.kind, price=lv.price, strength=lv.strength, distance_pct=lv.distance_pct)
+            for lv in outcome.levels
+        ],
         summary=outcome.summary,
     )
 

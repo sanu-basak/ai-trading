@@ -23,6 +23,8 @@ from app.domain.models import (
     TrendDirection,
 )
 from app.engines.technical import indicators as ind
+from app.engines.patterns import candlestick
+from app.engines.price_action import levels as levels_engine
 
 MIN_CANDLES = 30
 
@@ -167,6 +169,19 @@ def analyze(df: pd.DataFrame, timeframe: str = "1d") -> AnalysisOutcome:
         d = 1.0 if price > v_vwap else -1.0
         add("vwap", d, 0.10, f"Price is {'above' if d > 0 else 'below'} VWAP {v_vwap:.2f}.")
 
+    # 8) Candlestick patterns — the strongest recent directional pattern nudges the score.
+    detected_patterns = candlestick.detect(df)
+    key_levels = levels_engine.detect(df)
+    directional_patterns = [p for p in detected_patterns if p.direction in ("bullish", "bearish")]
+    if directional_patterns:
+        top = max(directional_patterns, key=lambda p: p.confidence)
+        add(
+            "candlestick",
+            1.0 if top.direction == "bullish" else -1.0,
+            0.10,
+            f"{top.name.replace('_', ' ').title()} — {top.detail}",
+        )
+
     score = weighted_sum / weight_total if weight_total > 0 else 0.0
 
     # --- Trend & regime ---
@@ -274,6 +289,8 @@ def analyze(df: pd.DataFrame, timeframe: str = "1d") -> AnalysisOutcome:
         reasons=factors,
         rejection=rejection,
         indicators=indicators_snapshot,
+        patterns=detected_patterns,
+        levels=key_levels,
         summary=summary,
     )
 

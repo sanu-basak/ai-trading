@@ -1,7 +1,9 @@
 from app.domain.models import (
     AnalysisOutcome,
     Factor,
+    Level,
     MarketRegime,
+    Pattern,
     SignalType,
     Target,
     TrendDirection,
@@ -10,7 +12,9 @@ from app.domain.models import (
 __all__ = [
     "AnalysisOutcome",
     "Factor",
+    "Level",
     "MarketRegime",
+    "Pattern",
     "SignalType",
     "Target",
     "TrendDirection",
