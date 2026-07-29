@@ -1,0 +1,181 @@
+// Shared API contract types (mirror of the backend DTOs).
+
+export interface ApiSuccess<T> {
+  success: true;
+  data: T;
+  meta?: { pagination?: Pagination };
+  requestId?: string;
+}
+
+export interface ApiError {
+  success: false;
+  error: { code: string; message: string; details?: unknown };
+  requestId?: string;
+}
+
+export interface Pagination {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+// --- Auth ---
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: 'Bearer';
+  expiresIn: number;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  status: string;
+  emailVerified: boolean;
+  roles: string[];
+  permissions: string[];
+  createdAt: string;
+}
+
+export interface AuthResult {
+  user: UserProfile;
+  tokens: AuthTokens;
+}
+
+// --- Instruments ---
+export interface Instrument {
+  id: string;
+  symbol: string;
+  name: string;
+  assetClass: string;
+  exchange: { code: string; name: string };
+  currency: string;
+  sector: string | null;
+  lotSize: number;
+  tickSize: number;
+  isTradable: boolean;
+  isActive: boolean;
+}
+
+// --- Signals ---
+export type SignalType = 'BUY' | 'SELL' | 'NO_TRADE' | 'WATCH';
+
+export interface SignalReason {
+  name: string;
+  direction: string;
+  weight: number;
+  contribution: number;
+  detail: string;
+}
+
+export interface SignalTarget {
+  price: number;
+  rr: number;
+  label: string;
+}
+
+export interface Signal {
+  id: string;
+  instrumentId: string;
+  symbol: string;
+  name: string;
+  exchange: string;
+  type: SignalType;
+  timeframe: string;
+  confidence: number;
+  entry: number | null;
+  stopLoss: number | null;
+  targets: SignalTarget[];
+  riskReward: number | null;
+  holdingPeriod: string | null;
+  marketRegime: string | null;
+  trend: string | null;
+  reasons: SignalReason[];
+  indicators: Record<string, number | null>;
+  rejection: string[];
+  summary: string | null;
+  modelVersion: string | null;
+  generatedAt: string;
+  disclaimer?: string;
+}
+
+// --- Watchlist ---
+export interface Watchlist {
+  id: string;
+  name: string;
+  color: string | null;
+  isDefault: boolean;
+  sortOrder: number;
+  itemCount: number;
+  createdAt: string;
+}
+
+export interface WatchlistItem {
+  id: string;
+  instrumentId: string;
+  symbol: string;
+  name: string;
+  assetClass: string;
+  exchange: string;
+  note: string | null;
+  sortOrder: number;
+}
+
+export interface WatchlistDetail extends Watchlist {
+  items: WatchlistItem[];
+}
+
+// --- Paper trading ---
+export interface PaperAccount {
+  id: string;
+  name: string;
+  currency: string;
+  startingCapital: number;
+  cashBalance: number;
+  realizedPnl: number;
+  openPositions: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface PaperPosition {
+  instrumentId: string;
+  symbol: string;
+  name: string;
+  assetClass: string;
+  exchange: string;
+  side: 'LONG' | 'SHORT';
+  quantity: number;
+  avgEntryPrice: number;
+  currentPrice: number | null;
+  marketValue: number | null;
+  unrealizedPnl: number | null;
+  unrealizedPnlPct: number | null;
+  realizedPnl: number;
+}
+
+export interface PaperAccountDetail extends PaperAccount {
+  positions: PaperPosition[];
+  summary: {
+    cashBalance: number;
+    positionsValue: number;
+    equity: number;
+    unrealizedPnl: number;
+    realizedPnl: number;
+    totalReturn: number;
+    totalReturnPct: number;
+    unpricedCount: number;
+  };
+}
+
+export interface PlaceOrderResult {
+  status: 'FILLED' | 'OPEN';
+  orderId: string;
+  fillPrice: number | null;
+  realizedPnl: number | null;
+}
