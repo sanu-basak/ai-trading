@@ -10,8 +10,18 @@ import type {
 } from '../domain/signal.repository';
 
 type SignalRow = Prisma.SignalGetPayload<{
-  include: { instrument: { include: { exchange: true } } };
+  include: {
+    instrument: { include: { exchange: true } };
+    patterns: true;
+    levels: true;
+  };
 }>;
+
+const SIGNAL_INCLUDE = {
+  instrument: { include: { exchange: true } },
+  patterns: true,
+  levels: true,
+} satisfies Prisma.SignalInclude;
 
 function toRecord(row: SignalRow): SignalRecord {
   return {
@@ -36,6 +46,19 @@ function toRecord(row: SignalRow): SignalRecord {
     summary: row.summary,
     modelVersion: row.modelVersion,
     generatedAt: row.generatedAt.toISOString(),
+    patterns: row.patterns.map((p) => ({
+      name: p.name,
+      category: p.category,
+      direction: p.direction,
+      confidence: Number(p.confidence),
+      detail: p.detail,
+    })),
+    levels: row.levels.map((lv) => ({
+      kind: lv.kind,
+      price: Number(lv.price),
+      strength: lv.strength !== null ? Number(lv.strength) : 0,
+      label: lv.label,
+    })),
   };
 }
 
@@ -65,6 +88,26 @@ export class PrismaSignalRepository implements ISignalRepository {
         summary: input.summary,
         modelVersion: input.modelVersion,
         expiresAt: input.expiresAt,
+        patterns: {
+          create: input.patterns.map((p) => ({
+            category: p.category as Prisma.PatternDetectionCreateWithoutSignalInput['category'],
+            name: p.name,
+            timeframe: input.timeframe as Prisma.PatternDetectionCreateWithoutSignalInput['timeframe'],
+            direction: p.direction
+              ? (p.direction as Prisma.PatternDetectionCreateWithoutSignalInput['direction'])
+              : null,
+            confidence: p.confidence,
+            detail: p.detail,
+          })),
+        },
+        levels: {
+          create: input.levels.map((lv) => ({
+            kind: lv.kind,
+            price: lv.price,
+            strength: lv.strength,
+            label: lv.label,
+          })),
+        },
       },
     });
     return signal.id;
@@ -73,7 +116,7 @@ export class PrismaSignalRepository implements ISignalRepository {
   async findById(id: string, userId: string): Promise<SignalRecord | null> {
     const row = await this.prisma.signal.findFirst({
       where: { id, userId },
-      include: { instrument: { include: { exchange: true } } },
+      include: SIGNAL_INCLUDE,
     });
     return row ? toRecord(row) : null;
   }
@@ -87,7 +130,7 @@ export class PrismaSignalRepository implements ISignalRepository {
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.signal.findMany({
         where,
-        include: { instrument: { include: { exchange: true } } },
+        include: SIGNAL_INCLUDE,
         orderBy: { generatedAt: 'desc' },
         skip: (req.page - 1) * req.pageSize,
         take: req.pageSize,

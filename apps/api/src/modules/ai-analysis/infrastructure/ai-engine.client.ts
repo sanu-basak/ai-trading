@@ -32,6 +32,22 @@ export interface AiTarget {
   label: string;
 }
 
+export interface AiPattern {
+  name: string;
+  category: string;
+  direction: string;
+  confidence: number;
+  bar_offset: number;
+  detail: string;
+}
+
+export interface AiLevel {
+  kind: string;
+  price: number;
+  strength: number;
+  distance_pct: number;
+}
+
 export interface AiAnalyzeResponse {
   symbol: string;
   timeframe: string;
@@ -47,6 +63,8 @@ export interface AiAnalyzeResponse {
   reasons: AiFactor[];
   rejection: string[];
   indicators: Record<string, unknown>;
+  patterns: AiPattern[];
+  levels: AiLevel[];
   summary: string;
   generated_at: string;
   model_version: string;

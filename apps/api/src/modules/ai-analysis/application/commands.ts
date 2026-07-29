@@ -81,6 +81,11 @@ export class AnalyzeInstrumentHandler
       throw new InternalError(`Unsupported timeframe mapping: ${command.timeframe}`);
     }
 
+    // Map the engine's pattern direction (bullish/bearish/neutral) to the
+    // TrendDirection enum used for persistence.
+    const directionToTrend = (d: string): string | null =>
+      d === 'bullish' ? 'UP' : d === 'bearish' ? 'DOWN' : null;
+
     const signalId = await this.signalRepo.create({
       userId: command.userId,
       instrumentId: instrument.id,
@@ -100,6 +105,19 @@ export class AnalyzeInstrumentHandler
       summary: analysis.summary,
       modelVersion: analysis.model_version,
       expiresAt: null,
+      patterns: analysis.patterns.map((p) => ({
+        name: p.name,
+        category: p.category,
+        direction: directionToTrend(p.direction),
+        confidence: p.confidence,
+        detail: p.detail,
+      })),
+      levels: analysis.levels.map((lv) => ({
+        kind: lv.kind,
+        price: lv.price,
+        strength: lv.strength,
+        label: `${lv.distance_pct >= 0 ? '+' : ''}${lv.distance_pct.toFixed(2)}%`,
+      })),
     });
 
     const record = await this.signalRepo.findById(signalId, command.userId);

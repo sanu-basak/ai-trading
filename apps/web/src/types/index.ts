@@ -79,6 +79,21 @@ export interface SignalTarget {
   label: string;
 }
 
+export interface SignalPattern {
+  name: string;
+  category: string;
+  direction: string | null;
+  confidence: number;
+  detail: string | null;
+}
+
+export interface SignalLevel {
+  kind: string;
+  price: number;
+  strength: number;
+  label: string | null;
+}
+
 export interface Signal {
   id: string;
   instrumentId: string;
@@ -97,6 +112,8 @@ export interface Signal {
   trend: string | null;
   reasons: SignalReason[];
   indicators: Record<string, number | null>;
+  patterns: SignalPattern[];
+  levels: SignalLevel[];
   rejection: string[];
   summary: string | null;
   modelVersion: string | null;

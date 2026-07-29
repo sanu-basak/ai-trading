@@ -14,6 +14,36 @@ export interface SignalTargetJson {
   label: string;
 }
 
+export interface PatternInput {
+  name: string;
+  category: string; // PatternCategory enum value
+  direction: string | null; // TrendDirection enum value or null
+  confidence: number;
+  detail: string;
+}
+
+export interface LevelInput {
+  kind: string;
+  price: number;
+  strength: number;
+  label: string | null;
+}
+
+export interface PatternDto {
+  name: string;
+  category: string;
+  direction: string | null;
+  confidence: number;
+  detail: string | null;
+}
+
+export interface LevelDto {
+  kind: string;
+  price: number;
+  strength: number;
+  label: string | null;
+}
+
 export interface CreateSignalInput {
   userId: string;
   instrumentId: string;
@@ -33,6 +63,8 @@ export interface CreateSignalInput {
   summary: string | null;
   modelVersion: string | null;
   expiresAt: Date | null;
+  patterns: PatternInput[];
+  levels: LevelInput[];
 }
 
 export interface SignalRecord {
@@ -57,6 +89,8 @@ export interface SignalRecord {
   summary: string | null;
   modelVersion: string | null;
   generatedAt: string;
+  patterns: PatternDto[];
+  levels: LevelDto[];
 }
 
 export interface SignalListFilter extends PageRequest {

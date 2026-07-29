@@ -102,6 +102,61 @@ export function SignalCard({ signal }: { signal: Signal }) {
         </div>
       </div>
 
+      {/* Candlestick patterns */}
+      {signal.patterns && signal.patterns.length > 0 && (
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Patterns</div>
+          <div className="flex flex-wrap gap-2">
+            {signal.patterns.map((p) => (
+              <span
+                key={p.name}
+                title={p.detail ?? undefined}
+                className={cn(
+                  'rounded-md border px-2 py-1 text-xs',
+                  p.direction === 'UP'
+                    ? 'border-bull/30 bg-bull/10 text-bull'
+                    : p.direction === 'DOWN'
+                      ? 'border-bear/30 bg-bear/10 text-bear'
+                      : 'border-border bg-surface-2 text-slate-300',
+                )}
+              >
+                {p.name.replace(/_/g, ' ')}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Support / resistance levels */}
+      {signal.levels && signal.levels.length > 0 && (
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+            Key levels
+          </div>
+          <div className="grid gap-1.5 sm:grid-cols-2">
+            {signal.levels.map((lv, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-sm"
+              >
+                <span
+                  className={cn(
+                    'font-medium',
+                    lv.kind === 'resistance' ? 'text-bear' : 'text-bull',
+                  )}
+                >
+                  {lv.kind}
+                </span>
+                <span className="tabular-nums text-slate-100">{fmt(lv.price)}</span>
+                <span className="text-xs text-muted">
+                  ×{lv.strength} {lv.label ?? ''}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {signal.disclaimer && (
         <p className="border-t border-border pt-3 text-[11px] leading-relaxed text-muted">
           {signal.disclaimer}
