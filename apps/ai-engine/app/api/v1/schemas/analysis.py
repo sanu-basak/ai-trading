@@ -61,6 +61,40 @@ class LevelOut(BaseModel):
     distance_pct: float
 
 
+class FrameIn(BaseModel):
+    timeframe: str
+    candles: list[OHLCVIn] = Field(min_length=1)
+
+
+class MtfRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    symbol: str
+    exchange: str | None = None
+    frames: list[FrameIn] = Field(min_length=1)
+
+
+class TimeframeAnalysisOut(BaseModel):
+    timeframe: str
+    signal: str
+    confidence: float
+    trend: str
+    score: float
+
+
+class MtfResponse(BaseModel):
+    symbol: str
+    signal: str
+    confidence: float
+    composite_score: float
+    alignment: str
+    frames: list[TimeframeAnalysisOut]
+    summary: str
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    model_version: str = 'mtf-confluence-1.0'
+    disclaimer: str = DISCLAIMER
+
+
 class AnalyzeResponse(BaseModel):
     symbol: str
     timeframe: str

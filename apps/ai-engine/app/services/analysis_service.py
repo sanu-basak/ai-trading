@@ -8,11 +8,15 @@ from app.api.v1.schemas.analysis import (
     AnalyzeResponse,
     FactorOut,
     LevelOut,
+    MtfRequest,
+    MtfResponse,
     PatternOut,
     TargetOut,
+    TimeframeAnalysisOut,
 )
 from app.domain.models import AnalysisOutcome
 from app.engines import signal_engine
+from app.engines.multi_timeframe import confluence
 
 
 def build_dataframe(request: AnalyzeRequest) -> pd.DataFrame:
@@ -81,3 +85,43 @@ def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     df = build_dataframe(request)
     outcome = signal_engine.analyze(df, timeframe=request.timeframe)
     return _to_response(request, outcome)
+
+
+def analyze_mtf(request: MtfRequest) -> MtfResponse:
+    """Analyze each supplied timeframe and combine into a confluence view."""
+    results: list[tuple[str, AnalysisOutcome]] = []
+    for frame in request.frames:
+        rows = [
+            {
+                "open_time": c.open_time,
+                "open": c.open,
+                "high": c.high,
+                "low": c.low,
+                "close": c.close,
+                "volume": c.volume,
+            }
+            for c in frame.candles
+        ]
+        df = pd.DataFrame(rows).drop_duplicates(subset="open_time").sort_values("open_time")
+        df = df.reset_index(drop=True)
+        results.append((frame.timeframe, signal_engine.analyze(df, timeframe=frame.timeframe)))
+
+    outcome = confluence.combine(request.symbol, results)
+    return MtfResponse(
+        symbol=outcome.symbol,
+        signal=outcome.signal.value,
+        confidence=outcome.confidence,
+        composite_score=outcome.composite_score,
+        alignment=outcome.alignment,
+        frames=[
+            TimeframeAnalysisOut(
+                timeframe=f.timeframe,
+                signal=f.signal.value,
+                confidence=f.confidence,
+                trend=f.trend.value,
+                score=f.score,
+            )
+            for f in outcome.frames
+        ],
+        summary=outcome.summary,
+    )

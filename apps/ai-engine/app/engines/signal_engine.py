@@ -292,6 +292,7 @@ def analyze(df: pd.DataFrame, timeframe: str = "1d") -> AnalysisOutcome:
         patterns=detected_patterns,
         levels=key_levels,
         summary=summary,
+        score=round(score, 4),
     )
 
 

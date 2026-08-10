@@ -67,6 +67,30 @@ class Level:
 
 
 @dataclass
+class TimeframeResult:
+    """The single-timeframe analysis contributing to a multi-timeframe view."""
+
+    timeframe: str
+    signal: "SignalType"
+    confidence: float
+    trend: "TrendDirection"
+    score: float
+
+
+@dataclass
+class MtfOutcome:
+    """A multi-timeframe confluence result combining several timeframes."""
+
+    symbol: str
+    signal: "SignalType"
+    confidence: float
+    composite_score: float
+    alignment: str  # aligned_bullish | aligned_bearish | mixed | neutral
+    frames: list["TimeframeResult"] = field(default_factory=list)
+    summary: str = ""
+
+
+@dataclass
 class AnalysisOutcome:
     signal: SignalType
     confidence: float
@@ -83,3 +107,4 @@ class AnalysisOutcome:
     patterns: list[Pattern] = field(default_factory=list)
     levels: list[Level] = field(default_factory=list)
     summary: str = ""
+    score: float = 0.0
