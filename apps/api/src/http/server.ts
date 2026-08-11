@@ -1,5 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import { buildContainer, type AppContainer } from '../di';
+import { startModuleWorkers } from '../modules';
 import { createApp } from './app';
 
 export interface RunningServer {
@@ -27,6 +28,9 @@ export async function bootstrap(): Promise<RunningServer> {
   const app = createApp(container);
   const server = createServer(app);
   socketServer.attach(server);
+
+  // Start background workers now that Redis is connected.
+  await startModuleWorkers(container);
 
   await new Promise<void>((resolve) => {
     server.listen(config.env.PORT, () => {
