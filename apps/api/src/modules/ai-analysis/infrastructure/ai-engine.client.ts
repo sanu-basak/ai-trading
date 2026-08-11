@@ -71,6 +71,38 @@ export interface AiAnalyzeResponse {
   disclaimer: string;
 }
 
+export interface AiMtfFrameRequest {
+  timeframe: string;
+  candles: AiCandle[];
+}
+
+export interface AiMtfRequest {
+  symbol: string;
+  exchange?: string;
+  frames: AiMtfFrameRequest[];
+}
+
+export interface AiMtfFrame {
+  timeframe: string;
+  signal: string;
+  confidence: number;
+  trend: string;
+  score: number;
+}
+
+export interface AiMtfResponse {
+  symbol: string;
+  signal: 'BUY' | 'SELL' | 'NO_TRADE' | 'WATCH';
+  confidence: number;
+  composite_score: number;
+  alignment: string;
+  frames: AiMtfFrame[];
+  summary: string;
+  generated_at: string;
+  model_version: string;
+  disclaimer: string;
+}
+
 /**
  * Typed client for the Python AI engine. The Node API remains the owner of
  * market data — it fetches real candles and hands them to this analysis-only
@@ -85,6 +117,10 @@ export class AiEngineClient {
 
   async analyze(request: AiAnalyzeRequest): Promise<AiAnalyzeResponse> {
     return this.post<AiAnalyzeResponse>('/api/v1/analysis/analyze', request);
+  }
+
+  async analyzeMtf(request: AiMtfRequest): Promise<AiMtfResponse> {
+    return this.post<AiMtfResponse>('/api/v1/analysis/analyze-mtf', request);
   }
 
   async health(): Promise<boolean> {

@@ -6,6 +6,8 @@ import { AiEngineClient, PrismaSignalRepository } from './infrastructure';
 import {
   AnalyzeInstrumentCommand,
   AnalyzeInstrumentHandler,
+  AnalyzeInstrumentMtfCommand,
+  AnalyzeInstrumentMtfHandler,
   GetSignalHandler,
   GetSignalQuery,
   ListSignalsHandler,
@@ -33,6 +35,10 @@ export function registerAiAnalysisModule(container: AppContainer): Router {
       socketServer,
       logger,
     ),
+  );
+  commandBus.register(
+    AnalyzeInstrumentMtfCommand,
+    new AnalyzeInstrumentMtfHandler(instrumentRepo, marketDataService, aiClient, logger),
   );
   queryBus.register(ListSignalsQuery, new ListSignalsHandler(signalRepo));
   queryBus.register(GetSignalQuery, new GetSignalHandler(signalRepo));

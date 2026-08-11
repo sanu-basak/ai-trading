@@ -7,6 +7,11 @@ export const analyzeSchema = z.object({
   timeframe: timeframeEnum.default('1d'),
 });
 
+export const analyzeMtfSchema = z.object({
+  instrumentId: z.string().min(1),
+  timeframes: z.array(timeframeEnum).min(1).max(6).optional(),
+});
+
 export const listSignalsQuerySchema = z.object({
   instrumentId: z.string().min(1).optional(),
   type: z.enum(['BUY', 'SELL', 'NO_TRADE', 'WATCH']).optional(),

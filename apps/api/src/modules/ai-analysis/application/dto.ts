@@ -11,6 +11,25 @@ export function withDisclaimer(record: SignalRecord): SignalDto {
   return { ...record, disclaimer: ANALYSIS_DISCLAIMER };
 }
 
+export interface MtfFrameDto {
+  timeframe: string;
+  signal: string;
+  confidence: number;
+  trend: string;
+  score: number;
+}
+
+export interface MtfResultDto {
+  symbol: string;
+  signal: string;
+  confidence: number;
+  compositeScore: number;
+  alignment: string;
+  frames: MtfFrameDto[];
+  summary: string;
+  disclaimer: string;
+}
+
 /** Platform timeframe string → Prisma Timeframe enum value. */
 export const PRISMA_TIMEFRAME: Record<string, string> = {
   '1m': 'M1',

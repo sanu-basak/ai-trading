@@ -6,8 +6,10 @@ import { sendCreated, sendOk, sendPage } from '../../../http/response';
 import type { SignalRecord } from '../domain/signal.repository';
 import {
   AnalyzeInstrumentCommand,
+  AnalyzeInstrumentMtfCommand,
   GetSignalQuery,
   ListSignalsQuery,
+  type MtfResultDto,
   type SignalDto,
 } from '../application';
 
@@ -23,6 +25,17 @@ export class AiAnalysisController {
       new AnalyzeInstrumentCommand(req.user!.id, instrumentId, timeframe),
     );
     sendCreated(res, signal);
+  };
+
+  analyzeMtf = async (req: Request, res: Response): Promise<void> => {
+    const { instrumentId, timeframes } = req.body as {
+      instrumentId: string;
+      timeframes?: Timeframe[];
+    };
+    const result = await this.commandBus.execute<MtfResultDto>(
+      new AnalyzeInstrumentMtfCommand(req.user!.id, instrumentId, timeframes ?? []),
+    );
+    sendOk(res, result);
   };
 
   list = async (req: Request, res: Response): Promise<void> => {

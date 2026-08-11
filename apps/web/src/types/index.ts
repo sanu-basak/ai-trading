@@ -121,6 +121,26 @@ export interface Signal {
   disclaimer?: string;
 }
 
+// --- Multi-timeframe ---
+export interface MtfFrame {
+  timeframe: string;
+  signal: SignalType;
+  confidence: number;
+  trend: string;
+  score: number;
+}
+
+export interface MtfResult {
+  symbol: string;
+  signal: SignalType;
+  confidence: number;
+  compositeScore: number;
+  alignment: string;
+  frames: MtfFrame[];
+  summary: string;
+  disclaimer: string;
+}
+
 // --- Watchlist ---
 export interface Watchlist {
   id: string;

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
-import type { ApiSuccess, Signal } from '@/types';
+import type { ApiSuccess, MtfResult, Signal } from '@/types';
 
 interface AnalyzeInput {
   instrumentId: string;
@@ -15,6 +15,15 @@ export function useAnalyze() {
       return res.data.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['signals'] }),
+  });
+}
+
+export function useAnalyzeMtf() {
+  return useMutation({
+    mutationFn: async (input: { instrumentId: string; timeframes?: string[] }) => {
+      const res = await api.post<ApiSuccess<MtfResult>>('/ai/analyze-mtf', input);
+      return res.data.data;
+    },
   });
 }
 

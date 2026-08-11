@@ -2,7 +2,12 @@ import { Router } from 'express';
 import type { AppContainer } from '../../../di';
 import { asyncHandler, authenticate, authorize, validate } from '../../../middleware';
 import type { AiAnalysisController } from './ai.controller';
-import { analyzeSchema, listSignalsQuerySchema, signalIdParamSchema } from './ai.schemas';
+import {
+  analyzeMtfSchema,
+  analyzeSchema,
+  listSignalsQuerySchema,
+  signalIdParamSchema,
+} from './ai.schemas';
 
 export function aiAnalysisRoutes(
   container: AppContainer,
@@ -17,6 +22,12 @@ export function aiAnalysisRoutes(
     authorize('signal:create'),
     validate({ body: analyzeSchema }),
     asyncHandler(controller.analyze),
+  );
+  router.post(
+    '/analyze-mtf',
+    authorize('signal:create'),
+    validate({ body: analyzeMtfSchema }),
+    asyncHandler(controller.analyzeMtf),
   );
   router.get(
     '/signals',

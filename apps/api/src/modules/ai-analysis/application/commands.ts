@@ -6,7 +6,14 @@ import type { MarketDataService, AssetClass as MdAssetClass, Timeframe } from '.
 import type { IInstrumentReadRepository } from '../../instruments';
 import type { AiEngineClient } from '../infrastructure/ai-engine.client';
 import type { ISignalRepository } from '../domain/signal.repository';
-import { PRISMA_TIMEFRAME, TIMEFRAME_MS, withDisclaimer, type SignalDto } from './dto';
+import {
+  ANALYSIS_DISCLAIMER,
+  PRISMA_TIMEFRAME,
+  TIMEFRAME_MS,
+  withDisclaimer,
+  type MtfResultDto,
+  type SignalDto,
+} from './dto';
 
 const CANDLE_LOOKBACK = 300;
 const MIN_CANDLES = 30;
@@ -130,5 +137,94 @@ export class AnalyzeInstrumentHandler
     );
 
     return withDisclaimer(record);
+  }
+}
+
+const DEFAULT_MTF_TIMEFRAMES: Timeframe[] = ['1h', '4h', '1d'];
+
+export class AnalyzeInstrumentMtfCommand implements ICommand {
+  constructor(
+    readonly userId: string,
+    readonly instrumentId: string,
+    readonly timeframes: Timeframe[] = DEFAULT_MTF_TIMEFRAMES,
+  ) {}
+}
+
+/**
+ * Multi-timeframe analysis: fetches real candles for each requested timeframe
+ * and asks the Python engine to combine them into a confluence view. Computed
+ * on demand (not persisted) since it is a composite of single-timeframe signals.
+ */
+export class AnalyzeInstrumentMtfHandler
+  implements ICommandHandler<AnalyzeInstrumentMtfCommand, MtfResultDto>
+{
+  constructor(
+    private readonly instrumentRepo: IInstrumentReadRepository,
+    private readonly marketData: MarketDataService,
+    private readonly aiClient: AiEngineClient,
+    private readonly logger: Logger,
+  ) {}
+
+  async execute(command: AnalyzeInstrumentMtfCommand): Promise<MtfResultDto> {
+    const instrument = await this.instrumentRepo.findById(command.instrumentId);
+    if (!instrument) throw new NotFoundError('Instrument');
+
+    const timeframes = command.timeframes.length > 0 ? command.timeframes : DEFAULT_MTF_TIMEFRAMES;
+    const symbol = {
+      symbol: instrument.symbol,
+      exchange: instrument.exchange.code,
+      assetClass: instrument.assetClass as MdAssetClass,
+    };
+
+    const frames = await Promise.all(
+      timeframes.map(async (timeframe) => {
+        const to = Date.now();
+        const from = to - CANDLE_LOOKBACK * (TIMEFRAME_MS[timeframe] ?? TIMEFRAME_MS['1d']!);
+        const candleResponse = await this.marketData.getCandles({
+          symbol,
+          timeframe,
+          from,
+          to,
+          limit: CANDLE_LOOKBACK,
+        });
+        return {
+          timeframe,
+          candles: candleResponse.candles.map((c) => ({
+            openTime: c.openTime,
+            open: c.open,
+            high: c.high,
+            low: c.low,
+            close: c.close,
+            volume: c.volume,
+          })),
+        };
+      }),
+    );
+
+    const usable = frames.filter((f) => f.candles.length >= MIN_CANDLES);
+    if (usable.length === 0) {
+      throw new DomainError('Not enough historical data on any timeframe to analyze.');
+    }
+
+    const result = await this.aiClient.analyzeMtf({
+      symbol: instrument.symbol,
+      exchange: instrument.exchange.code,
+      frames: usable,
+    });
+    this.logger.info(
+      { userId: command.userId, instrument: instrument.symbol, signal: result.signal },
+      'MTF analysis generated',
+    );
+
+    return {
+      symbol: result.symbol,
+      signal: result.signal,
+      confidence: result.confidence,
+      compositeScore: result.composite_score,
+      alignment: result.alignment,
+      frames: result.frames,
+      summary: result.summary,
+      disclaimer: result.disclaimer || ANALYSIS_DISCLAIMER,
+    };
   }
 }
