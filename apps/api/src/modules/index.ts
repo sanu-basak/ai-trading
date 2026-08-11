@@ -13,6 +13,7 @@ import { registerTradeJournalModule } from './trade-journal';
 import { registerRiskModule } from './risk';
 import { registerSettingsModule } from './settings';
 import { registerStrategyModule } from './strategy';
+import { registerMarketScannerModule } from './market-scanner';
 
 export interface MountedModule {
   path: string;
@@ -39,6 +40,7 @@ export function registerModules(container: AppContainer): MountedModule[] {
     { path: '/risk', router: registerRiskModule(container) },
     { path: '/settings', router: registerSettingsModule(container) },
     { path: '/strategies', router: registerStrategyModule(container) },
+    { path: '/scanner', router: registerMarketScannerModule(container) },
   ];
 }
 
