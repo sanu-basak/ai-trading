@@ -11,12 +11,16 @@ from app.api.v1.schemas.analysis import (
     MtfRequest,
     MtfResponse,
     PatternOut,
+    SmcRequest,
+    SmcResponse,
     TargetOut,
     TimeframeAnalysisOut,
 )
 from app.domain.models import AnalysisOutcome
 from app.engines import signal_engine
 from app.engines.multi_timeframe import confluence
+from app.engines.smart_money import smc as smc_engine
+from dataclasses import asdict
 
 
 def build_dataframe(request: AnalyzeRequest) -> pd.DataFrame:
@@ -107,6 +111,39 @@ def analyze_mtf(request: MtfRequest) -> MtfResponse:
         results.append((frame.timeframe, signal_engine.analyze(df, timeframe=frame.timeframe)))
 
     outcome = confluence.combine(request.symbol, results)
+    return _mtf_response(outcome)
+
+
+def analyze_smc(request: SmcRequest) -> SmcResponse:
+    """Run smart-money-concepts analysis on the supplied candles."""
+    rows = [
+        {
+            "open_time": c.open_time,
+            "open": c.open,
+            "high": c.high,
+            "low": c.low,
+            "close": c.close,
+            "volume": c.volume,
+        }
+        for c in request.candles
+    ]
+    df = pd.DataFrame(rows).drop_duplicates(subset="open_time").sort_values("open_time").reset_index(drop=True)
+    result = smc_engine.analyze(df)
+    return SmcResponse(
+        symbol=request.symbol,
+        timeframe=request.timeframe,
+        structure=result.structure,
+        bias=result.bias,
+        last_event=asdict(result.last_event) if result.last_event else None,
+        premium_discount=asdict(result.premium_discount) if result.premium_discount else None,
+        order_blocks=[asdict(ob) for ob in result.order_blocks],
+        fair_value_gaps=[asdict(g) for g in result.fair_value_gaps],
+        liquidity=[asdict(lq) for lq in result.liquidity],
+        summary=result.summary,
+    )
+
+
+def _mtf_response(outcome) -> MtfResponse:
     return MtfResponse(
         symbol=outcome.symbol,
         signal=outcome.signal.value,

@@ -5,6 +5,8 @@ from app.api.v1.schemas.analysis import (
     AnalyzeResponse,
     MtfRequest,
     MtfResponse,
+    SmcRequest,
+    SmcResponse,
 )
 from app.services import analysis_service
 
@@ -28,3 +30,10 @@ def analyze_mtf(request: MtfRequest) -> MtfResponse:
     instrument and combine them into one composite call, weighting higher
     timeframes more and flagging agreement vs conflict."""
     return analysis_service.analyze_mtf(request)
+
+
+@router.post("/analyze-smc", response_model=SmcResponse)
+def analyze_smc(request: SmcRequest) -> SmcResponse:
+    """Smart-money-concepts analysis: market structure, BOS/CHoCH, order blocks,
+    fair-value gaps, liquidity pools and the premium/discount zone."""
+    return analysis_service.analyze_smc(request)
