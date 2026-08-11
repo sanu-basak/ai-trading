@@ -13,6 +13,9 @@ import { PaperTradingPage } from '@/features/paper-trading/PaperTradingPage';
 import { JournalPage } from '@/features/trade-journal/JournalPage';
 import { BacktestPage } from '@/features/backtesting/BacktestPage';
 import { AlertsPage } from '@/features/alerts/AlertsPage';
+import { RiskPage } from '@/features/risk/RiskPage';
+import { ScannerPage } from '@/features/scanner/ScannerPage';
+import { SettingsPage } from '@/features/settings/SettingsPage';
 
 export function App() {
   useAuthBootstrap();
@@ -34,6 +37,9 @@ export function App() {
           <Route path="/journal" element={<JournalPage />} />
           <Route path="/backtest" element={<BacktestPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
+          <Route path="/scanner" element={<ScannerPage />} />
+          <Route path="/risk" element={<RiskPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
 

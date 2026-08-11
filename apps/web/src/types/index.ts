@@ -121,6 +121,62 @@ export interface Signal {
   disclaimer?: string;
 }
 
+// --- Risk ---
+export interface RiskProfile {
+  accountSize: number;
+  currency: string;
+  maxRiskPerTradePct: number;
+  maxPortfolioRiskPct: number;
+  maxOpenPositions: number;
+  maxDailyLossPct: number;
+  maxDrawdownPct: number;
+  defaultRiskReward: number;
+  positionSizingModel: string;
+}
+
+export interface PositionSizeResult {
+  riskAmount: number;
+  stopDistance: number;
+  stopDistancePct: number;
+  quantity: number;
+  positionValue: number;
+  positionPctOfAccount: number;
+  riskReward: number | null;
+  valid: boolean;
+  warning: string | null;
+}
+
+// --- Scanner ---
+export interface ScanRow {
+  instrumentId: string;
+  symbol: string;
+  exchange: string;
+  signal: SignalType;
+  confidence: number;
+  trend: string;
+  price: number | null;
+}
+
+export interface ScanResult {
+  scanned: number;
+  matched: number;
+  timeframe: string;
+  results: ScanRow[];
+  disclaimer: string;
+}
+
+// --- Settings ---
+export interface Settings {
+  theme: string;
+  baseCurrency: string;
+  defaultMarket: string;
+  defaultTimeframe: string;
+  chartType: string;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  marketingOptIn: boolean;
+}
+
 // --- Smart Money Concepts ---
 export interface SmcResult {
   symbol: string;

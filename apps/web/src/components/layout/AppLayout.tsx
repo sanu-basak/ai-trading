@@ -8,6 +8,9 @@ import {
   BookOpen,
   FlaskConical,
   BellRing,
+  Radar,
+  Calculator,
+  Settings as SettingsIcon,
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -24,7 +27,10 @@ const NAV = [
   { to: '/paper', label: 'Paper Trading', icon: LineChart },
   { to: '/journal', label: 'Trade Journal', icon: BookOpen },
   { to: '/backtest', label: 'Backtesting', icon: FlaskConical },
+  { to: '/scanner', label: 'Scanner', icon: Radar },
   { to: '/alerts', label: 'Alerts', icon: BellRing },
+  { to: '/risk', label: 'Risk', icon: Calculator },
+  { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 export function AppLayout() {
