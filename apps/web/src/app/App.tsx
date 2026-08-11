@@ -12,6 +12,7 @@ import { WatchlistPage } from '@/features/watchlist/WatchlistPage';
 import { PaperTradingPage } from '@/features/paper-trading/PaperTradingPage';
 import { JournalPage } from '@/features/trade-journal/JournalPage';
 import { BacktestPage } from '@/features/backtesting/BacktestPage';
+import { AlertsPage } from '@/features/alerts/AlertsPage';
 
 export function App() {
   useAuthBootstrap();
@@ -32,6 +33,7 @@ export function App() {
           <Route path="/paper" element={<PaperTradingPage />} />
           <Route path="/journal" element={<JournalPage />} />
           <Route path="/backtest" element={<BacktestPage />} />
+          <Route path="/alerts" element={<AlertsPage />} />
         </Route>
       </Route>
 

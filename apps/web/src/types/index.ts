@@ -167,6 +167,30 @@ export interface WatchlistDetail extends Watchlist {
   items: WatchlistItem[];
 }
 
+// --- Alerts ---
+export type AlertOperator = 'ABOVE' | 'BELOW' | 'CROSSES_ABOVE' | 'CROSSES_BELOW';
+
+export interface AlertCondition {
+  kind: 'PRICE';
+  operator: AlertOperator;
+  value: number;
+}
+
+export interface Alert {
+  id: string;
+  instrumentId: string;
+  symbol: string;
+  name: string;
+  type: string;
+  status: string;
+  condition: AlertCondition;
+  channels: string[];
+  isRepeating: boolean;
+  triggerCount: number;
+  lastTriggeredAt: string | null;
+  createdAt: string;
+}
+
 // --- Notifications ---
 export interface Notification {
   id: string;
