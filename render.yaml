@@ -89,6 +89,16 @@ services:
         sync: false
       - key: SEED_ADMIN_PASSWORD
         sync: false
+      # Optional: enable AI Chat by adding a key (leave blank to keep it off).
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: claude-sonnet-5
+      # Optional: enable payments.
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
 
   # --- Web (React SPA, static) ---
   - type: web

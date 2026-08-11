@@ -90,14 +90,41 @@ See [`docs/architecture/STRUCTURE.md`](docs/architecture/STRUCTURE.md) for the f
 
 ## 🚀 Getting started
 
-> Build is delivered module-by-module. Setup instructions and tooling are added as each
-> layer lands (database → API → frontend → AI → tests → deployment).
+Prerequisites: **Node ≥ 20.11**, **pnpm ≥ 9**, **Python ≥ 3.11**, plus **PostgreSQL** and **Redis**
+(local installs, Docker, or free hosted — Neon + Upstash work with zero local infra).
 
-Prerequisites: **Node ≥ 20.11**, **pnpm ≥ 9**, **Python ≥ 3.11**, **Docker**, **PostgreSQL**, **Redis**.
+### Option A — Docker (whole stack, one command)
 
 ```bash
-pnpm install            # install JS workspaces (added in a later step)
+cp infra/env/docker.env.example .env    # then edit secrets
+docker compose up --build
+# API :4000 · AI engine :8000 · Postgres :5432 · Redis :6379
 ```
+
+### Option B — Run locally without Docker
+
+```bash
+# 1) API  (point apps/api/.env at your Postgres + Redis — see apps/api/.env.example)
+cd apps/api && pnpm install
+npx prisma migrate deploy && pnpm db:seed && pnpm dev        # http://localhost:4000
+
+# 2) AI engine
+cd apps/ai-engine && python -m venv .venv
+./.venv/Scripts/pip install -r requirements.txt              # (Unix: .venv/bin/pip)
+./.venv/Scripts/uvicorn app.main:app --port 8000             # http://localhost:8000
+
+# 3) Web
+cd apps/web && cp .env.example .env && pnpm dev              # http://localhost:5173
+```
+
+Crypto AI analysis works out of the box (Binance, no key). Equities/forex need a keyed
+market-data provider; **AI Chat** needs `ANTHROPIC_API_KEY`; **payments** need Razorpay keys —
+each degrades to a clear "not configured" message rather than breaking.
+
+### Deploy a public URL
+
+Push to GitHub and use the included [`render.yaml`](render.yaml) blueprint — see
+[docs/deployment/render.md](docs/deployment/render.md).
 
 ---
 

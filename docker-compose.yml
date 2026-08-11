@@ -91,6 +91,7 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-dev-encryption-key-change-me-32bytes!}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-claude-sonnet-5}
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
     ports:
