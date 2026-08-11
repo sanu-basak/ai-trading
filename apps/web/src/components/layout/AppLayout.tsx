@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Search, Sparkles, Star, LineChart, LogOut } from 'lucide-react';
+import { LayoutDashboard, Search, Sparkles, Star, LineChart, BookOpen, LogOut } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAuthStore } from '@/stores/auth.store';
 import { useLogout } from '@/features/auth/api';
@@ -10,6 +10,7 @@ const NAV = [
   { to: '/analyze', label: 'AI Analysis', icon: Sparkles },
   { to: '/watchlists', label: 'Watchlists', icon: Star },
   { to: '/paper', label: 'Paper Trading', icon: LineChart },
+  { to: '/journal', label: 'Trade Journal', icon: BookOpen },
 ];
 
 export function AppLayout() {

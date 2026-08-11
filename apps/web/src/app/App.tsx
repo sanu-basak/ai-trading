@@ -10,6 +10,7 @@ import { InstrumentsPage } from '@/features/instruments/InstrumentsPage';
 import { AnalyzePage } from '@/features/ai-analysis/AnalyzePage';
 import { WatchlistPage } from '@/features/watchlist/WatchlistPage';
 import { PaperTradingPage } from '@/features/paper-trading/PaperTradingPage';
+import { JournalPage } from '@/features/trade-journal/JournalPage';
 
 export function App() {
   useAuthBootstrap();
@@ -28,6 +29,7 @@ export function App() {
           <Route path="/analyze" element={<AnalyzePage />} />
           <Route path="/watchlists" element={<WatchlistPage />} />
           <Route path="/paper" element={<PaperTradingPage />} />
+          <Route path="/journal" element={<JournalPage />} />
         </Route>
       </Route>
 

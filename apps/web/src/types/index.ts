@@ -167,6 +167,50 @@ export interface WatchlistDetail extends Watchlist {
   items: WatchlistItem[];
 }
 
+// --- Trade journal ---
+export interface JournalTrade {
+  id: string;
+  instrumentId: string;
+  symbol: string;
+  name: string;
+  exchange: string;
+  side: 'LONG' | 'SHORT';
+  status: 'OPEN' | 'CLOSED' | 'CANCELED';
+  quantity: number;
+  entryPrice: number;
+  exitPrice: number | null;
+  stopLoss: number | null;
+  target: number | null;
+  entryAt: string;
+  exitAt: string | null;
+  fees: number;
+  pnl: number | null;
+  pnlPct: number | null;
+  rMultiple: number | null;
+  setup: string | null;
+  timeframe: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface JournalStats {
+  totalTrades: number;
+  wins: number;
+  losses: number;
+  breakeven: number;
+  winRate: number;
+  totalPnl: number;
+  grossProfit: number;
+  grossLoss: number;
+  profitFactor: number | null;
+  avgWin: number;
+  avgLoss: number;
+  expectancy: number;
+  avgRMultiple: number | null;
+  largestWin: number;
+  largestLoss: number;
+}
+
 // --- Paper trading ---
 export interface PaperAccount {
   id: string;
