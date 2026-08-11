@@ -5,6 +5,7 @@ import type { AiAnalysisController } from './ai.controller';
 import {
   analyzeMtfSchema,
   analyzeSchema,
+  backtestSchema,
   listSignalsQuerySchema,
   signalIdParamSchema,
 } from './ai.schemas';
@@ -28,6 +29,12 @@ export function aiAnalysisRoutes(
     authorize('signal:create'),
     validate({ body: analyzeMtfSchema }),
     asyncHandler(controller.analyzeMtf),
+  );
+  router.post(
+    '/backtest',
+    authorize('backtest:run'),
+    validate({ body: backtestSchema }),
+    asyncHandler(controller.backtest),
   );
   router.get(
     '/signals',

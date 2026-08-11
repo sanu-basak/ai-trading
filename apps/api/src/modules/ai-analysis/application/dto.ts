@@ -30,6 +30,25 @@ export interface MtfResultDto {
   disclaimer: string;
 }
 
+export interface EquityPointDto {
+  index: number;
+  equity: number;
+  drawdownPct: number;
+}
+
+export interface BacktestResultDto {
+  symbol: string;
+  timeframe: string;
+  strategy: string;
+  initialCapital: number;
+  finalEquity: number;
+  metrics: Record<string, number | null>;
+  trades: Array<Record<string, number | string>>;
+  equityCurve: EquityPointDto[];
+  summary: string;
+  disclaimer: string;
+}
+
 /** Platform timeframe string → Prisma Timeframe enum value. */
 export const PRISMA_TIMEFRAME: Record<string, string> = {
   '1m': 'M1',

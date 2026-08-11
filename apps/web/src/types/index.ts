@@ -167,6 +167,26 @@ export interface WatchlistDetail extends Watchlist {
   items: WatchlistItem[];
 }
 
+// --- Backtesting ---
+export interface EquityPoint {
+  index: number;
+  equity: number;
+  drawdownPct: number;
+}
+
+export interface BacktestResult {
+  symbol: string;
+  timeframe: string;
+  strategy: string;
+  initialCapital: number;
+  finalEquity: number;
+  metrics: Record<string, number | null>;
+  trades: Array<Record<string, number | string>>;
+  equityCurve: EquityPoint[];
+  summary: string;
+  disclaimer: string;
+}
+
 // --- Trade journal ---
 export interface JournalTrade {
   id: string;

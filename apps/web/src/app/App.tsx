@@ -11,6 +11,7 @@ import { AnalyzePage } from '@/features/ai-analysis/AnalyzePage';
 import { WatchlistPage } from '@/features/watchlist/WatchlistPage';
 import { PaperTradingPage } from '@/features/paper-trading/PaperTradingPage';
 import { JournalPage } from '@/features/trade-journal/JournalPage';
+import { BacktestPage } from '@/features/backtesting/BacktestPage';
 
 export function App() {
   useAuthBootstrap();
@@ -30,6 +31,7 @@ export function App() {
           <Route path="/watchlists" element={<WatchlistPage />} />
           <Route path="/paper" element={<PaperTradingPage />} />
           <Route path="/journal" element={<JournalPage />} />
+          <Route path="/backtest" element={<BacktestPage />} />
         </Route>
       </Route>
 

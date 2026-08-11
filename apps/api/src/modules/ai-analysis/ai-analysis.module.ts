@@ -8,6 +8,8 @@ import {
   AnalyzeInstrumentHandler,
   AnalyzeInstrumentMtfCommand,
   AnalyzeInstrumentMtfHandler,
+  RunBacktestCommand,
+  RunBacktestHandler,
   GetSignalHandler,
   GetSignalQuery,
   ListSignalsHandler,
@@ -39,6 +41,10 @@ export function registerAiAnalysisModule(container: AppContainer): Router {
   commandBus.register(
     AnalyzeInstrumentMtfCommand,
     new AnalyzeInstrumentMtfHandler(instrumentRepo, marketDataService, aiClient, logger),
+  );
+  commandBus.register(
+    RunBacktestCommand,
+    new RunBacktestHandler(instrumentRepo, marketDataService, aiClient),
   );
   queryBus.register(ListSignalsQuery, new ListSignalsHandler(signalRepo));
   queryBus.register(GetSignalQuery, new GetSignalHandler(signalRepo));

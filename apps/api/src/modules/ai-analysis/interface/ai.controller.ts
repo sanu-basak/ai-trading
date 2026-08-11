@@ -9,6 +9,8 @@ import {
   AnalyzeInstrumentMtfCommand,
   GetSignalQuery,
   ListSignalsQuery,
+  RunBacktestCommand,
+  type BacktestResultDto,
   type MtfResultDto,
   type SignalDto,
 } from '../application';
@@ -34,6 +36,29 @@ export class AiAnalysisController {
     };
     const result = await this.commandBus.execute<MtfResultDto>(
       new AnalyzeInstrumentMtfCommand(req.user!.id, instrumentId, timeframes ?? []),
+    );
+    sendOk(res, result);
+  };
+
+  backtest = async (req: Request, res: Response): Promise<void> => {
+    const b = req.body as {
+      instrumentId: string;
+      timeframe: Timeframe;
+      strategy: string;
+      params?: Record<string, unknown>;
+      initialCapital?: number;
+      commissionBps?: number;
+    };
+    const result = await this.commandBus.execute<BacktestResultDto>(
+      new RunBacktestCommand(
+        req.user!.id,
+        b.instrumentId,
+        b.timeframe,
+        b.strategy,
+        b.params ?? {},
+        b.initialCapital ?? 100_000,
+        b.commissionBps ?? 5,
+      ),
     );
     sendOk(res, result);
   };

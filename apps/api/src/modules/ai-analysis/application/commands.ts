@@ -11,11 +11,13 @@ import {
   PRISMA_TIMEFRAME,
   TIMEFRAME_MS,
   withDisclaimer,
+  type BacktestResultDto,
   type MtfResultDto,
   type SignalDto,
 } from './dto';
 
 const CANDLE_LOOKBACK = 300;
+const BACKTEST_LOOKBACK = 500;
 const MIN_CANDLES = 30;
 
 export class AnalyzeInstrumentCommand implements ICommand {
@@ -223,6 +225,87 @@ export class AnalyzeInstrumentMtfHandler
       compositeScore: result.composite_score,
       alignment: result.alignment,
       frames: result.frames,
+      summary: result.summary,
+      disclaimer: result.disclaimer || ANALYSIS_DISCLAIMER,
+    };
+  }
+}
+
+export class RunBacktestCommand implements ICommand {
+  constructor(
+    readonly userId: string,
+    readonly instrumentId: string,
+    readonly timeframe: Timeframe,
+    readonly strategy: string,
+    readonly params: Record<string, unknown> = {},
+    readonly initialCapital = 100_000,
+    readonly commissionBps = 5,
+  ) {}
+}
+
+/**
+ * Backtests a strategy over real historical candles: fetches them via the
+ * market-data layer and runs the Python engine. Computed on demand (research).
+ */
+export class RunBacktestHandler implements ICommandHandler<RunBacktestCommand, BacktestResultDto> {
+  constructor(
+    private readonly instrumentRepo: IInstrumentReadRepository,
+    private readonly marketData: MarketDataService,
+    private readonly aiClient: AiEngineClient,
+  ) {}
+
+  async execute(command: RunBacktestCommand): Promise<BacktestResultDto> {
+    const instrument = await this.instrumentRepo.findById(command.instrumentId);
+    if (!instrument) throw new NotFoundError('Instrument');
+
+    const to = Date.now();
+    const from = to - BACKTEST_LOOKBACK * (TIMEFRAME_MS[command.timeframe] ?? TIMEFRAME_MS['1d']!);
+    const candleResponse = await this.marketData.getCandles({
+      symbol: {
+        symbol: instrument.symbol,
+        exchange: instrument.exchange.code,
+        assetClass: instrument.assetClass as MdAssetClass,
+      },
+      timeframe: command.timeframe,
+      from,
+      to,
+      limit: BACKTEST_LOOKBACK,
+    });
+    if (candleResponse.candles.length < MIN_CANDLES) {
+      throw new DomainError(`Not enough historical data to backtest.`);
+    }
+
+    const result = await this.aiClient.backtest({
+      symbol: instrument.symbol,
+      exchange: instrument.exchange.code,
+      timeframe: command.timeframe,
+      strategy: command.strategy,
+      params: command.params,
+      initial_capital: command.initialCapital,
+      commission_bps: command.commissionBps,
+      candles: candleResponse.candles.map((c) => ({
+        openTime: c.openTime,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+        volume: c.volume,
+      })),
+    });
+
+    return {
+      symbol: result.symbol,
+      timeframe: result.timeframe,
+      strategy: result.strategy,
+      initialCapital: result.initial_capital,
+      finalEquity: result.final_equity,
+      metrics: result.metrics,
+      trades: result.trades,
+      equityCurve: result.equity_curve.map((p) => ({
+        index: p.index,
+        equity: p.equity,
+        drawdownPct: p.drawdown_pct,
+      })),
       summary: result.summary,
       disclaimer: result.disclaimer || ANALYSIS_DISCLAIMER,
     };
