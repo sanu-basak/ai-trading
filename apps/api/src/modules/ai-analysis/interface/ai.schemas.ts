@@ -12,6 +12,11 @@ export const analyzeMtfSchema = z.object({
   timeframes: z.array(timeframeEnum).min(1).max(6).optional(),
 });
 
+export const smcSchema = z.object({
+  instrumentId: z.string().min(1),
+  timeframe: timeframeEnum.default('1d'),
+});
+
 export const backtestSchema = z.object({
   instrumentId: z.string().min(1),
   timeframe: timeframeEnum.default('1d'),

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
-import type { ApiSuccess, MtfResult, Signal } from '@/types';
+import type { ApiSuccess, MtfResult, Signal, SmcResult } from '@/types';
 
 interface AnalyzeInput {
   instrumentId: string;
@@ -22,6 +22,15 @@ export function useAnalyzeMtf() {
   return useMutation({
     mutationFn: async (input: { instrumentId: string; timeframes?: string[] }) => {
       const res = await api.post<ApiSuccess<MtfResult>>('/ai/analyze-mtf', input);
+      return res.data.data;
+    },
+  });
+}
+
+export function useSmc() {
+  return useMutation({
+    mutationFn: async (input: { instrumentId: string; timeframe: string }) => {
+      const res = await api.post<ApiSuccess<SmcResult>>('/ai/smc', input);
       return res.data.data;
     },
   });

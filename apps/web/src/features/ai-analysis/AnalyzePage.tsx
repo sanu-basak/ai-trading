@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Layers, Sparkles } from 'lucide-react';
+import { Boxes, Layers, Sparkles } from 'lucide-react';
 import { PageHeader, Card, SignalBadge, EmptyState, Spinner } from '@/components/ui/misc';
 import { Button } from '@/components/ui/Button';
 import { InstrumentPicker } from '@/components/InstrumentPicker';
 import { apiErrorMessage } from '@/lib/api/client';
 import { useInstrument } from '@/features/instruments/api';
 import type { Instrument } from '@/types';
-import { useAnalyze, useAnalyzeMtf, useSignals } from './api';
+import { useAnalyze, useAnalyzeMtf, useSignals, useSmc } from './api';
 import { SignalCard } from './SignalCard';
 import { MtfCard } from './MtfCard';
+import { SmcCard } from './SmcCard';
 
 const TIMEFRAMES = ['5m', '15m', '1h', '4h', '1d', '1w'] as const;
 
@@ -22,6 +23,7 @@ export function AnalyzePage() {
   const [timeframe, setTimeframe] = useState<string>('1d');
   const analyze = useAnalyze();
   const analyzeMtf = useAnalyzeMtf();
+  const smc = useSmc();
   const signals = useSignals();
 
   // Preselect the instrument passed via ?instrumentId=
@@ -34,6 +36,9 @@ export function AnalyzePage() {
   };
   const runMtf = () => {
     if (selected) analyzeMtf.mutate({ instrumentId: selected.id, timeframes: ['1h', '4h', '1d'] });
+  };
+  const runSmc = () => {
+    if (selected) smc.mutate({ instrumentId: selected.id, timeframe });
   };
 
   return (
@@ -76,14 +81,29 @@ export function AnalyzePage() {
             >
               <Layers className="h-4 w-4" /> MTF
             </Button>
+            <Button
+              variant="ghost"
+              onClick={runSmc}
+              disabled={!selected}
+              loading={smc.isPending}
+              title="Smart-Money Concepts"
+            >
+              <Boxes className="h-4 w-4" /> SMC
+            </Button>
           </div>
         </div>
-        {(analyze.isError || analyzeMtf.isError) && (
+        {(analyze.isError || analyzeMtf.isError || smc.isError) && (
           <p className="mt-3 text-sm text-bear">
-            {apiErrorMessage(analyze.error ?? analyzeMtf.error)}
+            {apiErrorMessage(analyze.error ?? analyzeMtf.error ?? smc.error)}
           </p>
         )}
       </Card>
+
+      {smc.data && (
+        <div className="mb-6">
+          <SmcCard smc={smc.data} />
+        </div>
+      )}
 
       {analyzeMtf.data && (
         <div className="mb-6">

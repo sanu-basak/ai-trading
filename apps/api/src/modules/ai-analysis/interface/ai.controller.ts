@@ -7,12 +7,14 @@ import type { SignalRecord } from '../domain/signal.repository';
 import {
   AnalyzeInstrumentCommand,
   AnalyzeInstrumentMtfCommand,
+  AnalyzeSmcCommand,
   GetSignalQuery,
   ListSignalsQuery,
   RunBacktestCommand,
   type BacktestResultDto,
   type MtfResultDto,
   type SignalDto,
+  type SmcResultDto,
 } from '../application';
 
 export class AiAnalysisController {
@@ -36,6 +38,14 @@ export class AiAnalysisController {
     };
     const result = await this.commandBus.execute<MtfResultDto>(
       new AnalyzeInstrumentMtfCommand(req.user!.id, instrumentId, timeframes ?? []),
+    );
+    sendOk(res, result);
+  };
+
+  smc = async (req: Request, res: Response): Promise<void> => {
+    const { instrumentId, timeframe } = req.body as { instrumentId: string; timeframe: Timeframe };
+    const result = await this.commandBus.execute<SmcResultDto>(
+      new AnalyzeSmcCommand(req.user!.id, instrumentId, timeframe),
     );
     sendOk(res, result);
   };

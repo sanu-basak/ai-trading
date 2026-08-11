@@ -8,6 +8,8 @@ import {
   AnalyzeInstrumentHandler,
   AnalyzeInstrumentMtfCommand,
   AnalyzeInstrumentMtfHandler,
+  AnalyzeSmcCommand,
+  AnalyzeSmcHandler,
   RunBacktestCommand,
   RunBacktestHandler,
   GetSignalHandler,
@@ -41,6 +43,10 @@ export function registerAiAnalysisModule(container: AppContainer): Router {
   commandBus.register(
     AnalyzeInstrumentMtfCommand,
     new AnalyzeInstrumentMtfHandler(instrumentRepo, marketDataService, aiClient, logger),
+  );
+  commandBus.register(
+    AnalyzeSmcCommand,
+    new AnalyzeSmcHandler(instrumentRepo, marketDataService, aiClient),
   );
   commandBus.register(
     RunBacktestCommand,

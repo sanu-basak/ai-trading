@@ -121,6 +121,21 @@ export interface Signal {
   disclaimer?: string;
 }
 
+// --- Smart Money Concepts ---
+export interface SmcResult {
+  symbol: string;
+  timeframe: string;
+  structure: string;
+  bias: string;
+  lastEvent: { kind: string; direction: string; price: number } | null;
+  premiumDiscount: { zone: string; equilibrium: number; rangeHigh: number; rangeLow: number } | null;
+  orderBlocks: Array<{ kind: string; top: number; bottom: number; mitigated: boolean }>;
+  fairValueGaps: Array<{ kind: string; top: number; bottom: number; filled: boolean }>;
+  liquidity: Array<{ kind: string; price: number; touches: number }>;
+  summary: string;
+  disclaimer: string;
+}
+
 // --- Multi-timeframe ---
 export interface MtfFrame {
   timeframe: string;

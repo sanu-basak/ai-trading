@@ -14,6 +14,7 @@ import {
   type BacktestResultDto,
   type MtfResultDto,
   type SignalDto,
+  type SmcResultDto,
 } from './dto';
 
 const CANDLE_LOOKBACK = 300;
@@ -227,6 +228,92 @@ export class AnalyzeInstrumentMtfHandler
       frames: result.frames,
       summary: result.summary,
       disclaimer: result.disclaimer || ANALYSIS_DISCLAIMER,
+    };
+  }
+}
+
+export class AnalyzeSmcCommand implements ICommand {
+  constructor(
+    readonly userId: string,
+    readonly instrumentId: string,
+    readonly timeframe: Timeframe,
+  ) {}
+}
+
+/** Smart-money-concepts analysis over real candles (fetched, then Python). */
+export class AnalyzeSmcHandler implements ICommandHandler<AnalyzeSmcCommand, SmcResultDto> {
+  constructor(
+    private readonly instrumentRepo: IInstrumentReadRepository,
+    private readonly marketData: MarketDataService,
+    private readonly aiClient: AiEngineClient,
+  ) {}
+
+  async execute(command: AnalyzeSmcCommand): Promise<SmcResultDto> {
+    const instrument = await this.instrumentRepo.findById(command.instrumentId);
+    if (!instrument) throw new NotFoundError('Instrument');
+
+    const to = Date.now();
+    const from = to - CANDLE_LOOKBACK * (TIMEFRAME_MS[command.timeframe] ?? TIMEFRAME_MS['1d']!);
+    const candleResponse = await this.marketData.getCandles({
+      symbol: {
+        symbol: instrument.symbol,
+        exchange: instrument.exchange.code,
+        assetClass: instrument.assetClass as MdAssetClass,
+      },
+      timeframe: command.timeframe,
+      from,
+      to,
+      limit: CANDLE_LOOKBACK,
+    });
+    if (candleResponse.candles.length < MIN_CANDLES) {
+      throw new DomainError('Not enough historical data for smart-money analysis.');
+    }
+
+    const r = await this.aiClient.analyzeSmc({
+      symbol: instrument.symbol,
+      exchange: instrument.exchange.code,
+      timeframe: command.timeframe,
+      candles: candleResponse.candles.map((c) => ({
+        openTime: c.openTime,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+        volume: c.volume,
+      })),
+    });
+
+    return {
+      symbol: r.symbol,
+      timeframe: r.timeframe,
+      structure: r.structure,
+      bias: r.bias,
+      lastEvent: r.last_event
+        ? { kind: r.last_event.kind, direction: r.last_event.direction, price: r.last_event.price }
+        : null,
+      premiumDiscount: r.premium_discount
+        ? {
+            zone: r.premium_discount.zone,
+            equilibrium: r.premium_discount.equilibrium,
+            rangeHigh: r.premium_discount.range_high,
+            rangeLow: r.premium_discount.range_low,
+          }
+        : null,
+      orderBlocks: r.order_blocks.map((ob) => ({
+        kind: ob.kind,
+        top: ob.top,
+        bottom: ob.bottom,
+        mitigated: ob.mitigated,
+      })),
+      fairValueGaps: r.fair_value_gaps.map((g) => ({
+        kind: g.kind,
+        top: g.top,
+        bottom: g.bottom,
+        filled: g.filled,
+      })),
+      liquidity: r.liquidity.map((lq) => ({ kind: lq.kind, price: lq.price, touches: lq.touches })),
+      summary: r.summary,
+      disclaimer: r.disclaimer || ANALYSIS_DISCLAIMER,
     };
   }
 }

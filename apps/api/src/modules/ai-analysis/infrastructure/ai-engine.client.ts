@@ -103,6 +103,32 @@ export interface AiMtfResponse {
   disclaimer: string;
 }
 
+export interface AiSmcRequest {
+  symbol: string;
+  exchange?: string;
+  timeframe: string;
+  candles: AiCandle[];
+}
+
+export interface AiSmcResponse {
+  symbol: string;
+  timeframe: string;
+  structure: string;
+  bias: string;
+  last_event: { kind: string; direction: string; price: number; index: number } | null;
+  premium_discount: {
+    zone: string;
+    equilibrium: number;
+    range_high: number;
+    range_low: number;
+  } | null;
+  order_blocks: Array<{ kind: string; top: number; bottom: number; index: number; mitigated: boolean }>;
+  fair_value_gaps: Array<{ kind: string; top: number; bottom: number; index: number; filled: boolean }>;
+  liquidity: Array<{ kind: string; price: number; touches: number }>;
+  summary: string;
+  disclaimer: string;
+}
+
 export interface AiBacktestRequest {
   symbol: string;
   exchange?: string;
@@ -151,6 +177,10 @@ export class AiEngineClient {
 
   async analyzeMtf(request: AiMtfRequest): Promise<AiMtfResponse> {
     return this.post<AiMtfResponse>('/api/v1/analysis/analyze-mtf', request);
+  }
+
+  async analyzeSmc(request: AiSmcRequest): Promise<AiSmcResponse> {
+    return this.post<AiSmcResponse>('/api/v1/analysis/analyze-smc', request);
   }
 
   async backtest(request: AiBacktestRequest): Promise<AiBacktestResponse> {

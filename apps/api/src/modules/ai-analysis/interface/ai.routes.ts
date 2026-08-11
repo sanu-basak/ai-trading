@@ -8,6 +8,7 @@ import {
   backtestSchema,
   listSignalsQuerySchema,
   signalIdParamSchema,
+  smcSchema,
 } from './ai.schemas';
 
 export function aiAnalysisRoutes(
@@ -29,6 +30,12 @@ export function aiAnalysisRoutes(
     authorize('signal:create'),
     validate({ body: analyzeMtfSchema }),
     asyncHandler(controller.analyzeMtf),
+  );
+  router.post(
+    '/smc',
+    authorize('signal:create'),
+    validate({ body: smcSchema }),
+    asyncHandler(controller.smc),
   );
   router.post(
     '/backtest',
