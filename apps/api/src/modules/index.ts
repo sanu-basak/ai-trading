@@ -10,6 +10,7 @@ import { registerPaperTradingModule } from './paper-trading';
 import { registerAiAnalysisModule } from './ai-analysis';
 import { registerAlertsModule, startAlertsWorkers } from './alerts';
 import { registerTradeJournalModule } from './trade-journal';
+import { registerRiskModule } from './risk';
 
 export interface MountedModule {
   path: string;
@@ -33,6 +34,7 @@ export function registerModules(container: AppContainer): MountedModule[] {
     { path: '/ai', router: registerAiAnalysisModule(container) },
     { path: '/', router: registerAlertsModule(container) },
     { path: '/journal', router: registerTradeJournalModule(container) },
+    { path: '/risk', router: registerRiskModule(container) },
   ];
 }
 
