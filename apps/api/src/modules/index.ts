@@ -11,6 +11,8 @@ import { registerAiAnalysisModule } from './ai-analysis';
 import { registerAlertsModule, startAlertsWorkers } from './alerts';
 import { registerTradeJournalModule } from './trade-journal';
 import { registerRiskModule } from './risk';
+import { registerSettingsModule } from './settings';
+import { registerStrategyModule } from './strategy';
 
 export interface MountedModule {
   path: string;
@@ -35,6 +37,8 @@ export function registerModules(container: AppContainer): MountedModule[] {
     { path: '/', router: registerAlertsModule(container) },
     { path: '/journal', router: registerTradeJournalModule(container) },
     { path: '/risk', router: registerRiskModule(container) },
+    { path: '/settings', router: registerSettingsModule(container) },
+    { path: '/strategies', router: registerStrategyModule(container) },
   ];
 }
 
