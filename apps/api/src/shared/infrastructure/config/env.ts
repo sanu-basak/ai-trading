@@ -44,6 +44,8 @@ export const envSchema = z.object({
   // LLM providers (optional at boot; validated at feature use)
   ANTHROPIC_API_KEY: z.string().optional().default(''),
   OPENAI_API_KEY: z.string().optional().default(''),
+  LLM_MODEL: z.string().optional().default('claude-sonnet-5'),
+  LLM_MAX_TOKENS: z.coerce.number().int().positive().default(1024),
 
   // Payments
   RAZORPAY_KEY_ID: z.string().optional().default(''),

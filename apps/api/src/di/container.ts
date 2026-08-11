@@ -12,6 +12,7 @@ import {
 } from '../shared/infrastructure/security';
 import { SocketServer } from '../shared/infrastructure/websocket';
 import { HealthRegistry, MetricsService } from '../shared/infrastructure/monitoring';
+import { LlmService } from '../shared/infrastructure/llm';
 import { CommandBus, InMemoryEventBus, QueryBus } from '../shared/application';
 import {
   MarketDataService,
@@ -41,6 +42,7 @@ export interface Cradle {
   socketServer: SocketServer;
   healthRegistry: HealthRegistry;
   metricsService: MetricsService;
+  llm: LlmService;
   providerRegistry: ProviderRegistry;
   rateLimiter: RedisRateLimiter;
   marketDataService: MarketDataService;
@@ -82,6 +84,7 @@ export function buildContainer(config: AppConfig = AppConfig.load()): AppContain
     ).singleton(),
     healthRegistry: asFunction(({ logger }: Cradle) => new HealthRegistry(logger)).singleton(),
     metricsService: asFunction(({ config: c }: Cradle) => new MetricsService(c)).singleton(),
+    llm: asFunction(({ config: c, logger }: Cradle) => new LlmService(c, logger)).singleton(),
     providerRegistry: asFunction(({ logger }: Cradle) => new ProviderRegistry(logger)).singleton(),
     rateLimiter: asFunction(({ redis }: Cradle) => new RedisRateLimiter(redis)).singleton(),
     marketDataService: asFunction(

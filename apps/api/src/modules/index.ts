@@ -15,6 +15,10 @@ import { registerSettingsModule } from './settings';
 import { registerStrategyModule } from './strategy';
 import { registerMarketScannerModule } from './market-scanner';
 import { registerAdminModule } from './admin';
+import { registerAiChatModule } from './ai-chat';
+import { registerBillingModule } from './billing';
+import { registerBrokerModule } from './broker';
+import { registerNewsModule } from './news';
 
 export interface MountedModule {
   path: string;
@@ -43,6 +47,10 @@ export function registerModules(container: AppContainer): MountedModule[] {
     { path: '/strategies', router: registerStrategyModule(container) },
     { path: '/scanner', router: registerMarketScannerModule(container) },
     { path: '/admin', router: registerAdminModule(container) },
+    { path: '/chat', router: registerAiChatModule(container) },
+    { path: '/billing', router: registerBillingModule(container) },
+    { path: '/broker', router: registerBrokerModule(container) },
+    { path: '/news', router: registerNewsModule(container) },
   ];
 }
 
