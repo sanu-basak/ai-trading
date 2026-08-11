@@ -1,0 +1,109 @@
+# ===========================================================================
+# Render Blueprint — deploys the full DEVQUANTIC stack:
+#   Postgres + Redis + API (Node) + AI engine (Python) + web (static SPA).
+#
+# Usage: push this repo to GitHub, then in Render:  New → Blueprint → pick the
+# repo. Render creates every resource below. A few cross-service URLs must be
+# filled in the dashboard AFTER first deploy (they are marked `sync: false`);
+# see docs/deployment/render.md for the exact values and ordering.
+#
+# NOTE: this is a starting template. It has NOT been deployed/tested from this
+# environment (no Render account here). Free tiers spin down when idle and free
+# Postgres expires after ~90 days — fine for a demo, upgrade for anything real.
+# ===========================================================================
+
+databases:
+  - name: devquantic-db
+    plan: free
+    databaseName: devquantic
+    user: devquantic
+
+services:
+  # --- Redis (cache / pub-sub / BullMQ) ---
+  - type: redis
+    name: devquantic-redis
+    plan: free
+    ipAllowList: [] # reachable only from other Render services
+    maxmemoryPolicy: noeviction
+
+  # --- AI engine (Python FastAPI) ---
+  - type: web
+    name: devquantic-ai-engine
+    runtime: python
+    plan: free
+    rootDir: apps/ai-engine
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.4
+      - key: ENVIRONMENT
+        value: production
+      # Set to the web app's URL after it exists, e.g. https://devquantic-web.onrender.com
+      - key: CORS_ORIGINS
+        sync: false
+
+  # --- API (Node / Express) ---
+  - type: web
+    name: devquantic-api
+    runtime: node
+    plan: free
+    buildCommand: >-
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @devquantic/api exec prisma generate &&
+      pnpm --filter @devquantic/api build
+    startCommand: pnpm --filter @devquantic/api start
+    preDeployCommand: >-
+      pnpm --filter @devquantic/api prisma:deploy &&
+      pnpm --filter @devquantic/api db:seed
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: devquantic-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: devquantic-redis
+          type: redis
+          property: connectionString
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      # Fill after the AI engine exists, e.g. https://devquantic-ai-engine.onrender.com
+      - key: AI_ENGINE_URL
+        sync: false
+      # Fill with the web app URL, e.g. https://devquantic-web.onrender.com
+      - key: CORS_ORIGINS
+        sync: false
+      - key: WEB_BASE_URL
+        sync: false
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+
+  # --- Web (React SPA, static) ---
+  - type: web
+    name: devquantic-web
+    runtime: static
+    buildCommand: >-
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @devquantic/web build
+    staticPublishPath: apps/web/dist
+    envVars:
+      # Fill with the API URL + /api/v1, e.g. https://devquantic-api.onrender.com/api/v1
+      - key: VITE_API_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
