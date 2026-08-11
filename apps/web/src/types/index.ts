@@ -167,6 +167,19 @@ export interface WatchlistDetail extends Watchlist {
   items: WatchlistItem[];
 }
 
+// --- Notifications ---
+export interface Notification {
+  id: string;
+  category: string;
+  channel: string;
+  title: string;
+  body: string;
+  data: unknown;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
+
 // --- Backtesting ---
 export interface EquityPoint {
   index: number;

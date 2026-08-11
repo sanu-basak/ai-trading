@@ -12,6 +12,8 @@ import {
 import { cn } from '@/lib/cn';
 import { useAuthStore } from '@/stores/auth.store';
 import { useLogout } from '@/features/auth/api';
+import { NotificationsBell } from '@/features/notifications/NotificationsBell';
+import { useNotificationsSocket } from '@/features/notifications/useNotificationsSocket';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -26,6 +28,7 @@ const NAV = [
 export function AppLayout() {
   const user = useAuthStore((s) => s.user);
   const logout = useLogout();
+  useNotificationsSocket();
 
   return (
     <div className="flex min-h-screen">
@@ -68,6 +71,13 @@ export function AppLayout() {
       </aside>
 
       <main className="flex-1 overflow-x-hidden">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-bg/80 px-4 py-2.5 backdrop-blur md:px-8">
+          <span className="text-sm font-semibold text-slate-100 md:hidden">
+            DEV<span className="text-accent">QUANTIC</span>
+          </span>
+          <span className="hidden md:block" />
+          <NotificationsBell />
+        </header>
         <div className="mx-auto max-w-6xl px-4 py-6 md:px-8">
           <Outlet />
         </div>
