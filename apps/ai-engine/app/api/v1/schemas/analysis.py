@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -117,6 +118,34 @@ class SmcResponse(BaseModel):
     summary: str
     generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     model_version: str = "smc-1.0"
+    disclaimer: str = DISCLAIMER
+
+
+class BacktestRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    symbol: str
+    exchange: str | None = None
+    timeframe: str = "1d"
+    candles: list[OHLCVIn] = Field(min_length=1)
+    strategy: Literal["ema_cross", "rsi_reversion", "supertrend"] = "ema_cross"
+    params: dict = Field(default_factory=dict)
+    initial_capital: float = Field(default=100_000.0, gt=0)
+    commission_bps: float = Field(default=5.0, ge=0)
+
+
+class BacktestResponse(BaseModel):
+    symbol: str
+    timeframe: str
+    strategy: str
+    initial_capital: float
+    final_equity: float
+    metrics: dict
+    trades: list[dict]
+    equity_curve: list[dict]
+    summary: str
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    model_version: str = "backtest-1.0"
     disclaimer: str = DISCLAIMER
 
 

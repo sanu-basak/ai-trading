@@ -8,6 +8,8 @@ from app.api.v1.schemas.analysis import (
     AnalyzeResponse,
     FactorOut,
     LevelOut,
+    BacktestRequest,
+    BacktestResponse,
     MtfRequest,
     MtfResponse,
     PatternOut,
@@ -20,6 +22,7 @@ from app.domain.models import AnalysisOutcome
 from app.engines import signal_engine
 from app.engines.multi_timeframe import confluence
 from app.engines.smart_money import smc as smc_engine
+from app.engines.backtest import backtester
 from dataclasses import asdict
 
 
@@ -139,6 +142,41 @@ def analyze_smc(request: SmcRequest) -> SmcResponse:
         order_blocks=[asdict(ob) for ob in result.order_blocks],
         fair_value_gaps=[asdict(g) for g in result.fair_value_gaps],
         liquidity=[asdict(lq) for lq in result.liquidity],
+        summary=result.summary,
+    )
+
+
+def backtest(request: BacktestRequest) -> BacktestResponse:
+    """Run a rule-based strategy backtest over the supplied candles."""
+    rows = [
+        {
+            "open_time": c.open_time,
+            "open": c.open,
+            "high": c.high,
+            "low": c.low,
+            "close": c.close,
+            "volume": c.volume,
+        }
+        for c in request.candles
+    ]
+    df = pd.DataFrame(rows).drop_duplicates(subset="open_time").sort_values("open_time").reset_index(drop=True)
+    result = backtester.run(
+        df,
+        strategy=request.strategy,
+        params=request.params,
+        initial_capital=request.initial_capital,
+        commission_bps=request.commission_bps,
+        timeframe=request.timeframe,
+    )
+    return BacktestResponse(
+        symbol=request.symbol,
+        timeframe=request.timeframe,
+        strategy=result.strategy,
+        initial_capital=result.initial_capital,
+        final_equity=result.final_equity,
+        metrics=asdict(result.metrics),
+        trades=[asdict(t) for t in result.trades],
+        equity_curve=[asdict(p) for p in result.equity_curve],
         summary=result.summary,
     )
 

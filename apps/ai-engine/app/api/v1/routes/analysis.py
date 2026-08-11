@@ -3,6 +3,8 @@ from fastapi import APIRouter
 from app.api.v1.schemas.analysis import (
     AnalyzeRequest,
     AnalyzeResponse,
+    BacktestRequest,
+    BacktestResponse,
     MtfRequest,
     MtfResponse,
     SmcRequest,
@@ -37,3 +39,11 @@ def analyze_smc(request: SmcRequest) -> SmcResponse:
     """Smart-money-concepts analysis: market structure, BOS/CHoCH, order blocks,
     fair-value gaps, liquidity pools and the premium/discount zone."""
     return analysis_service.analyze_smc(request)
+
+
+@router.post("/backtest", response_model=BacktestResponse)
+def backtest(request: BacktestRequest) -> BacktestResponse:
+    """Backtest a rule-based strategy (ema_cross / rsi_reversion / supertrend)
+    over historical candles. Returns trades, an equity curve and performance
+    metrics — past performance never guarantees future results."""
+    return analysis_service.backtest(request)
