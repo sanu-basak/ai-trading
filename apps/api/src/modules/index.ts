@@ -14,6 +14,7 @@ import { registerRiskModule } from './risk';
 import { registerSettingsModule } from './settings';
 import { registerStrategyModule } from './strategy';
 import { registerMarketScannerModule } from './market-scanner';
+import { registerAdminModule } from './admin';
 
 export interface MountedModule {
   path: string;
@@ -41,6 +42,7 @@ export function registerModules(container: AppContainer): MountedModule[] {
     { path: '/settings', router: registerSettingsModule(container) },
     { path: '/strategies', router: registerStrategyModule(container) },
     { path: '/scanner', router: registerMarketScannerModule(container) },
+    { path: '/admin', router: registerAdminModule(container) },
   ];
 }
 
